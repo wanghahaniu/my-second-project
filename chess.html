@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>中国象棋</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  display: flex; flex-direction: column; align-items: center;
+  min-height: 100vh; background: #1a0f08;
+  font-family: 'Microsoft YaHei', '微软雅黑', sans-serif;
+  color: #f0d080; padding: 16px;
+}
+h1 { font-size: 22px; margin-bottom: 8px; letter-spacing: 4px; }
+#status {
+  font-size: 16px; margin-bottom: 8px; height: 24px;
+  color: #ffd700; font-weight: bold;
+}
+canvas {
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(139,69,19,0.8);
+  border-radius: 4px;
+}
+#controls { margin-top: 12px; display: flex; gap: 10px; }
+button {
+  background: #5c2d0a; color: #f0d080;
+  border: 1px solid #a0622a; padding: 7px 18px;
+  cursor: pointer; font-size: 14px; border-radius: 4px;
+  font-family: inherit; transition: background 0.2s;
+}
+button:hover { background: #7a3d12; }
+#thinking { font-size: 13px; color: #aaa; margin-top: 6px; height: 18px; }
+</style>
+</head>
+<body>
+<h1>中国象棋</h1>
+<div id="status">红方先行</div>
+<canvas id="board"></canvas>
+<div id="controls">
+  <button onclick="game.newGame()">新游戏</button>
+  <button onclick="game.undoMove()">悔棋</button>
+</div>
+<div id="thinking"></div>
+<script>
+// ─── 常量 ───────────────────────────────────────────────
+const CELL = 60, PAD = 40;
+const COLS = 9, ROWS = 10;
+const W = PAD*2 + CELL*(COLS-1);
+const H = PAD*2 + CELL*(ROWS-1);
+
+// 棋子编码：正数红方，负数黑方
+// 1=帅 2=仕 3=相 4=马 5=车 6=炮 7=兵
+// -1=将 -2=士 -3=象 -4=马 -5=车 -6=炮 -7=卒
+const NAMES = {
+  1:'帅', 2:'仕', 3:'相', 4:'马', 5:'车', 6:'炮', 7:'兵',
+ '-1':'将','-2':'士','-3':'象','-4':'马','-5':'车','-6':'炮','-7':'卒'
+};
+const VALS = { 1:10000,2:200,3:200,4:400,5:900,6:450,7:100 };
+
+const INIT_BOARD = [
+  [-5,-4,-3,-2,-1,-2,-3,-4,-5],
+  [ 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  [ 0,-6, 0, 0, 0, 0, 0,-6, 0],
+  [-7, 0,-7, 0,-7, 0,-7, 0,-7],
+  [ 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  [ 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  [ 7, 0, 7, 0, 7, 0, 7, 0, 7],
+  [ 0, 6, 0, 0, 0, 0, 0, 6, 0],
+  [ 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  [ 5, 4, 3, 2, 1, 2, 3, 4, 5],
+];
+
+// ─── 渲染 ───────────────────────────────────────────────
+const canvas = document.getElementById('board');
+canvas.width = W; canvas.height = H;
+const ctx = canvas.getContext('2d');
+
+function cx(col) { return PAD + col * CELL; }
+function cy(row) { return PAD + row * CELL; }
+
+function drawBoard(board, selected, highlights, lastMove) {
+  ctx.clearRect(0, 0, W, H);
+
+  // 棋盘底色
+  ctx.fillStyle = '#c8a060';
+  ctx.fillRect(0, 0, W, H);
+
+  // 木纹纹理（简单渐变）
+  const grad = ctx.createLinearGradient(0,0,W,H);
+  grad.addColorStop(0,'rgba(200,160,80,0.3)');
+  grad.addColorStop(1,'rgba(160,100,40,0.3)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,W,H);
+
+  ctx.strokeStyle = '#5a3010';
+  ctx.lineWidth = 1;
+
+  // 画格线
+  for (let r = 0; r < ROWS; r++) {
+    ctx.beginPath();
+    if (r === 0 || r === ROWS-1) {
+      ctx.moveTo(cx(0), cy(r)); ctx.lineTo(cx(COLS-1), cy(r));
+    } else {
+      ctx.moveTo(cx(0), cy(r)); ctx.lineTo(cx(0), cy(r));
+      ctx.moveTo(cx(0), cy(r)); ctx.lineTo(cx(COLS-1), cy(r));
+    }
+    ctx.stroke();
+  }
+  for (let c = 0; c < COLS; c++) {
+    ctx.beginPath();
+    if (c === 0 || c === COLS-1) {
+      ctx.moveTo(cx(c), cy(0)); ctx.lineTo(cx(c), cy(ROWS-1));
+    } else {
+      // 河界断开
+      ctx.moveTo(cx(c), cy(0)); ctx.lineTo(cx(c), cy(4));
+      ctx.moveTo(cx(c), cy(5)); ctx.lineTo(cx(c), cy(ROWS-1));
+    }
+    ctx.stroke();
+  }
+
+  // 九宫斜线
+  function palace(r1,c1,r2,c2) {
+    ctx.beginPath(); ctx.moveTo(cx(c1),cy(r1)); ctx.lineTo(cx(c2),cy(r2)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx(c2),cy(r1)); ctx.lineTo(cx(c1),cy(r2)); ctx.stroke();
+  }
+  palace(0,3,2,5); palace(7,3,9,5);
+
+  // 河界文字
+  ctx.save();
+  ctx.font = 'bold 18px Microsoft YaHei';
+  ctx.fillStyle = '#5a3010';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('楚 河', cx(1.5), cy(4.5));
+  ctx.fillText('汉 界', cx(5.5), cy(4.5));
+  ctx.restore();
+
+  // 兵卒炮位标记
+  function mark(r, c) {
+    const x = cx(c), y = cy(r), s = 5;
+    ctx.strokeStyle = '#5a3010'; ctx.lineWidth = 1;
+    const corners = [[-1,-1],[-1,1],[1,-1],[1,1]];
+    for (const [dr,dc] of corners) {
+      const ox = x + dc*s, oy = y + dr*s;
+      ctx.beginPath();
+      if (dc < 0) { ctx.moveTo(ox+4,oy); ctx.lineTo(ox,oy); }
+      else        { ctx.moveTo(ox-4,oy); ctx.lineTo(ox,oy); }
+      if (dr < 0) { ctx.lineTo(ox, oy+4); } else { ctx.lineTo(ox, oy-4); }
+      ctx.stroke();
+    }
+  }
+  [[3,0],[3,2],[3,4],[3,6],[3,8],[6,0],[6,2],[6,4],[6,6],[6,8],
+   [2,1],[2,7],[7,1],[7,7]].forEach(([r,c])=>mark(r,c));
+
+  // 上一步高亮
+  if (lastMove) {
+    const [[fr,fc],[tr,tc]] = lastMove;
+    ctx.fillStyle = 'rgba(255,200,0,0.25)';
+    ctx.fillRect(cx(fc)-CELL/2, cy(fr)-CELL/2, CELL, CELL);
+    ctx.fillRect(cx(tc)-CELL/2, cy(tr)-CELL/2, CELL, CELL);
+  }
+
+  // 可移动位置高亮
+  for (const [r,c] of highlights) {
+    ctx.beginPath();
+    ctx.arc(cx(c), cy(r), board[r][c]!==0 ? CELL*0.42 : 8, 0, Math.PI*2);
+    ctx.fillStyle = board[r][c]!==0 ? 'rgba(255,80,80,0.35)' : 'rgba(0,200,100,0.45)';
+    ctx.fill();
+  }
+
+  // 画棋子
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const p = board[r][c];
+      if (p === 0) continue;
+      drawPiece(r, c, p, selected && selected[0]===r && selected[1]===c);
+    }
+  }
+}
+
+function drawPiece(r, c, piece, isSelected) {
+  const x = cx(c), y = cy(r), rad = CELL*0.42;
+  const red = piece > 0;
+
+  ctx.save();
+  // 选中阴影
+  if (isSelected) {
+    ctx.shadowColor = '#ffff00';
+    ctx.shadowBlur = 14;
+  }
+
+  // 棋子底圆
+  const g = ctx.createRadialGradient(x-rad*0.3, y-rad*0.3, rad*0.1, x, y, rad);
+  if (red) {
+    g.addColorStop(0, '#fff0c0'); g.addColorStop(0.5, '#e8c060'); g.addColorStop(1, '#8b4010');
+  } else {
+    g.addColorStop(0, '#e0e0e0'); g.addColorStop(0.5, '#909090'); g.addColorStop(1, '#202020');
+  }
+  ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI*2);
+  ctx.fillStyle = g; ctx.fill();
+
+  // 边框
+  ctx.strokeStyle = red ? '#6b2000' : '#000';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // 内圆装饰
+  ctx.beginPath(); ctx.arc(x, y, rad*0.82, 0, Math.PI*2);
+  ctx.strokeStyle = red ? 'rgba(180,80,0,0.5)' : 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 1; ctx.stroke();
+
+  // 文字
+  ctx.fillStyle = red ? '#8b0000' : '#f0f0f0';
+  ctx.font = `bold ${Math.round(rad*1.1)}px Microsoft YaHei`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(NAMES[piece], x, y+1);
+  ctx.restore();
+}
+
+// ─── 走棋规则 ────────────────────────────────────────────
+function inB(r,c){ return r>=0&&r<10&&c>=0&&c<9; }
+function isRed(p){ return p>0; }
+function sameColor(a,b){ return (a>0&&b>0)||(a<0&&b<0); }
+function cloneBoard(b){ return b.map(r=>[...r]); }
+
+function applyMove(board, fr, fc, tr, tc) {
+  const nb = cloneBoard(board);
+  nb[tr][tc] = nb[fr][fc];
+  nb[fr][fc] = 0;
+  return nb;
+}
+
+function rawMoves(board, r, c) {
+  const p = board[r][c];
+  if (!p) return [];
+  const t = Math.abs(p), red = p>0, mv = [];
+
+  if (t===1) {
+    const pr = red?[7,8,9]:[0,1,2];
+    for(const[dr,dc] of [[0,1],[0,-1],[1,0],[-1,0]]){
+      const nr=r+dr,nc=c+dc;
+      if(pr.includes(nr)&&nc>=3&&nc<=5&&!sameColor(p,board[nr][nc])) mv.push([nr,nc]);
+    }
+  } else if (t===2) {
+    const pr = red?[7,8,9]:[0,1,2];
+    for(const[dr,dc] of [[1,1],[1,-1],[-1,1],[-1,-1]]){
+      const nr=r+dr,nc=c+dc;
+      if(pr.includes(nr)&&nc>=3&&nc<=5&&!sameColor(p,board[nr][nc])) mv.push([nr,nc]);
+    }
+  } else if (t===3) {
+    for(const[dr,dc] of [[2,2],[2,-2],[-2,2],[-2,-2]]){
+      const nr=r+dr,nc=c+dc;
+      if(!inB(nr,nc)) continue;
+      if(red&&nr<5) continue;
+      if(!red&&nr>4) continue;
+      if(board[r+dr/2][c+dc/2]!==0) continue;
+      if(!sameColor(p,board[nr][nc])) mv.push([nr,nc]);
+    }
+  } else if (t===4) {
+    for(const[br,bc,dr,dc] of [
+      [-1,0,-2,-1],[-1,0,-2,1],[1,0,2,-1],[1,0,2,1],
+      [0,-1,-1,-2],[0,-1,1,-2],[0,1,-1,2],[0,1,1,2]
+    ]){
+      if(!inB(r+br,c+bc)||board[r+br][c+bc]!==0) continue;
+      const nr=r+dr,nc=c+dc;
+      if(inB(nr,nc)&&!sameColor(p,board[nr][nc])) mv.push([nr,nc]);
+    }
+  } else if (t===5) {
+    for(const[dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]){
+      let nr=r+dr,nc=c+dc;
+      while(inB(nr,nc)){
+        if(board[nr][nc]===0){ mv.push([nr,nc]); }
+        else{ if(!sameColor(p,board[nr][nc])) mv.push([nr,nc]); break; }
+        nr+=dr; nc+=dc;
+      }
+    }
+  } else if (t===6) {
+    for(const[dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]){
+      let nr=r+dr,nc=c+dc,jumped=false;
+      while(inB(nr,nc)){
+        const tgt=board[nr][nc];
+        if(!jumped){
+          if(tgt===0) mv.push([nr,nc]);
+          else jumped=true;
+        } else {
+          if(tgt!==0){ if(!sameColor(p,tgt)) mv.push([nr,nc]); break; }
+        }
+        nr+=dr; nc+=dc;
+      }
+    }
+  } else if (t===7) {
+    const fwd = red?-1:1;
+    if(inB(r+fwd,c)&&!sameColor(p,board[r+fwd][c])) mv.push([r+fwd,c]);
+    const crossed = red?(r<=4):(r>=5);
+    if(crossed){
+      for(const dc of [-1,1])
+        if(inB(r,c+dc)&&!sameColor(p,board[r][c+dc])) mv.push([r,c+dc]);
+    }
+  }
+  return mv;
+}
+
+function inCheck(board, red) {
+  const gp = red?1:-1;
+  let gr=-1,gc=-1;
+  outer: for(let r=0;r<10;r++) for(let c=0;c<9;c++)
+    if(board[r][c]===gp){gr=r;gc=c;break outer;}
+  if(gr<0) return true;
+  for(let r=0;r<10;r++) for(let c=0;c<9;c++){
+    const p=board[r][c];
+    if(!p||isRed(p)===red) continue;
+    if(rawMoves(board,r,c).some(([mr,mc])=>mr===gr&&mc===gc)) return true;
+  }
+  // 照面规则
+  const ep = red?-1:1;
+  let er=-1,ec=-1;
+  outer2: for(let r=0;r<10;r++) for(let c=0;c<9;c++)
+    if(board[r][c]===ep){er=r;ec=c;break outer2;}
+  if(er>=0&&ec===gc){
+    let blocked=false;
+    const minR=Math.min(gr,er),maxR=Math.max(gr,er);
+    for(let rr=minR+1;rr<maxR;rr++) if(board[rr][gc]!==0){blocked=true;break;}
+    if(!blocked) return true;
+  }
+  return false;
+}
+
+function legalMoves(board, r, c) {
+  const p = board[r][c];
+  if(!p) return [];
+  const red = isRed(p);
+  return rawMoves(board,r,c).filter(([nr,nc])=>{
+    return !inCheck(applyMove(board,r,c,nr,nc), red);
+  });
+}
+
+function allLegalMoves(board, red) {
+  const moves=[];
+  for(let r=0;r<10;r++) for(let c=0;c<9;c++){
+    const p=board[r][c];
+    if(!p||isRed(p)!==red) continue;
+    for(const [nr,nc] of legalMoves(board,r,c))
+      moves.push([r,c,nr,nc]);
+  }
+  return moves;
+}
+
+// ─── AI 评估 ─────────────────────────────────────────────
+// 位置加成表（红方视角，黑方镜像）
+const POS_BONUS = {
+  5: [ // 车
+    [14,14,12,18,16,18,12,14,14],
+    [16,20,18,24,26,24,18,20,16],
+    [12,12,12,18,18,18,12,12,12],
+    [12,18,16,22,22,22,16,18,12],
+    [12,14,12,18,18,18,12,14,12],
+    [12,16,14,20,20,20,14,16,12],
+    [6, 10, 8,14,14,14, 8,10, 6],
+    [6,  8, 6,14,12,14, 6, 8, 6],
+    [6,  6, 6,12,10,12, 6, 6, 6],
+    [0,  6, 6,14, 6,14, 6, 6, 0],
+  ],
+  4: [ // 马
+    [ 4, 8, 16, 12, 4,12,16, 8, 4],
+    [ 4,10, 28, 16, 8,16,28,10, 4],
+    [ 8,16, 20, 24,12,24,20,16, 8],
+    [ 8,16, 24, 28,16,28,24,16, 8],
+    [ 4,12, 16, 20,12,20,16,12, 4],
+    [ 4,12, 16, 18,12,18,16,12, 4],
+    [ 0, 0, 12, 16, 4,16,12, 0, 0],
+    [ 0, 0,  8, 12, 0,12, 8, 0, 0],
+    [ 0, 0,  0,  4, 0, 4, 0, 0, 0],
+    [ 0, 0,  0,  0, 0, 0, 0, 0, 0],
+  ],
+  6: [ // 炮
+    [ 6, 4, 0,-10, 0,-10, 0, 4, 6],
+    [ 2, 2, 0, -4,-14, -4, 0, 2, 2],
+    [ 2, 2, 0,-10,-10,-10, 0, 2, 2],
+    [ 0, 0,-2,  4, 10,  4,-2, 0, 0],
+    [ 0, 0, 0,  2,  8,  2, 0, 0, 0],
+    [-2, 0, 4,  2, 6,   2, 4, 0,-2],
+    [ 0, 0, 0, -2, 4,  -2, 0, 0, 0],
+    [ 4, 0, 8,  6, 10,  6, 8, 0, 4],
+    [ 0, 0, 0,  2, 8,   2, 0, 0, 0],
+    [ 0, 0, 2,  6, 10,  6, 2, 0, 0],
+  ],
+  7: [ // 兵/卒
+    [ 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [ 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [ 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [ 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [ 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [ 4, 0, 4, 0, 4, 0, 4, 0, 4],
+    [18,36,36,36,36,36,36,36,18],
+    [28,36,36,36,36,36,36,36,28],
+    [52,52,52,52,52,52,52,52,52],
+    [ 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  ],
+};
+
+function evaluate(board) {
+  let score = 0;
+  for(let r=0;r<10;r++) for(let c=0;c<9;c++){
+    const p = board[r][c];
+    if(!p) continue;
+    const t = Math.abs(p), red = p>0;
+    let val = VALS[t] || 0;
+    // 位置加成
+    if(POS_BONUS[t]){
+      const row = red ? r : (9-r);
+      val += POS_BONUS[t][row][c];
+    }
+    score += red ? val : -val;
+  }
+  return score;
+}
+
+// Minimax + Alpha-Beta
+function minimax(board, depth, alpha, beta, maxing) {
+  if(depth===0) return evaluate(board);
+  const moves = allLegalMoves(board, maxing);
+  if(moves.length===0) return maxing ? -99999 : 99999;
+
+  if(maxing){
+    let best=-Infinity;
+    for(const [fr,fc,tr,tc] of moves){
+      const nb = applyMove(board,fr,fc,tr,tc);
+      const v = minimax(nb,depth-1,alpha,beta,false);
+      if(v>best) best=v;
+      if(v>alpha) alpha=v;
+      if(beta<=alpha) break;
+    }
+    return best;
+  } else {
+    let best=Infinity;
+    for(const [fr,fc,tr,tc] of moves){
+      const nb = applyMove(board,fr,fc,tr,tc);
+      const v = minimax(nb,depth-1,alpha,beta,true);
+      if(v<best) best=v;
+      if(v<beta) beta=v;
+      if(beta<=alpha) break;
+    }
+    return best;
+  }
+}
+
+function getBestMove(board, red, depth=2) {
+  const moves = allLegalMoves(board, red);
+  if(!moves.length) return null;
+  let best=null, bestVal = red?-Infinity:Infinity;
+  for(const [fr,fc,tr,tc] of moves){
+    const nb = applyMove(board,fr,fc,tr,tc);
+    const v = minimax(nb,depth-1,-Infinity,Infinity,!red);
+    if(red ? v>bestVal : v<bestVal){ bestVal=v; best=[fr,fc,tr,tc]; }
+  }
+  return best;
+}
+
+// ─── 游戏状态 ─────────────────────────────────────────────
+const game = (() => {
+  let board, selected, highlights, lastMove, history, aiThinking, gameOver;
+  const statusEl = document.getElementById('status');
+  const thinkEl  = document.getElementById('thinking');
+
+  // 玩家=红方(true)，AI=黑方(false)
+  const PLAYER_RED = true;
+
+  function render() {
+    drawBoard(board, selected, highlights, lastMove);
+  }
+
+  function setStatus(msg) { statusEl.textContent = msg; }
+
+  function newGame() {
+    board      = INIT_BOARD.map(r=>[...r]);
+    selected   = null;
+    highlights = [];
+    lastMove   = null;
+    history    = [];
+    aiThinking = false;
+    gameOver   = false;
+    setStatus('红方先行（你执红棋）');
+    thinkEl.textContent = '';
+    render();
+  }
+
+  function undoMove() {
+    if (aiThinking || gameOver) return;
+    // 悔两步（撤销玩家+AI各一步）
+    if (history.length >= 2) {
+      history.pop(); history.pop();
+      board    = history.length ? history[history.length-1].board.map(r=>[...r])
+                                : INIT_BOARD.map(r=>[...r]);
+      lastMove = history.length ? history[history.length-1].move : null;
+    } else if (history.length === 1) {
+      history.pop();
+      board    = INIT_BOARD.map(r=>[...r]);
+      lastMove = null;
+    } else return;
+    selected   = null;
+    highlights = [];
+    gameOver   = false;
+    setStatus('红方先行（你执红棋）');
+    render();
+  }
+
+  function doAI() {
+    if (gameOver) return;
+    aiThinking = true;
+    thinkEl.textContent = 'AI 思考中…';
+    // 用 setTimeout 让 UI 先刷新
+    setTimeout(() => {
+      const mv = getBestMove(board, false, 3);
+      if (!mv) {
+        setStatus('红方胜！（AI无子可走）');
+        gameOver = true; aiThinking = false;
+        thinkEl.textContent = '';
+        render(); return;
+      }
+      const [fr,fc,tr,tc] = mv;
+      board    = applyMove(board,fr,fc,tr,tc);
+      lastMove = [[fr,fc],[tr,tc]];
+      history.push({ board: board.map(r=>[...r]), move: lastMove });
+      aiThinking = false;
+      thinkEl.textContent = '';
+
+      // 检查玩家是否被将死
+      if (!allLegalMoves(board, true).length) {
+        setStatus(inCheck(board,true) ? '黑方胜！（将死）' : '平局（困毙）');
+        gameOver = true;
+      } else {
+        setStatus(inCheck(board,true) ? '红方被将！请应将' : '红方走棋');
+      }
+      selected = null; highlights = [];
+      render();
+    }, 30);
+  }
+
+  canvas.addEventListener('click', e => {
+    if (aiThinking || gameOver) return;
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const c = Math.round((mx - PAD) / CELL);
+    const r = Math.round((my - PAD) / CELL);
+    if (!inB(r,c)) return;
+
+    const p = board[r][c];
+
+    if (selected) {
+      const [sr,sc] = selected;
+      // 点击合法目标 → 走棋
+      if (highlights.some(([hr,hc])=>hr===r&&hc===c)) {
+        board    = applyMove(board,sr,sc,r,c);
+        lastMove = [[sr,sc],[r,c]];
+        history.push({ board: board.map(row=>[...row]), move: lastMove });
+        selected = null; highlights = [];
+
+        // 检查AI是否被将死
+        if (!allLegalMoves(board, false).length) {
+          setStatus(inCheck(board,false) ? '红方胜！（将死）' : '平局（困毙）');
+          gameOver = true;
+          render(); return;
+        }
+        setStatus(inCheck(board,false) ? '黑方被将！AI应将中…' : 'AI 思考中…');
+        render();
+        doAI();
+        return;
+      }
+      // 点击己方其他棋子 → 切换选中
+      if (p > 0) {
+        selected   = [r,c];
+        highlights = legalMoves(board,r,c);
+        render(); return;
+      }
+      // 点击空地或无效 → 取消选中
+      selected = null; highlights = [];
+      render();
+    } else {
+      // 选中红方棋子
+      if (p > 0) {
+        selected   = [r,c];
+        highlights = legalMoves(board,r,c);
+        render();
+      }
+    }
+  });
+
+  newGame();
+  return { newGame, undoMove };
+})();
+</script>
+</body>
+</html>
