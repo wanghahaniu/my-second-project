@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>猜前三名</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Microsoft YaHei',sans-serif;background:#f0f4f8;min-height:100vh}
+
+/* ── 顶部导航 ── */
+header{background:#2563eb;color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:18px;letter-spacing:2px}
+#adminBtn{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.4);
+  color:#fff;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:13px}
+#adminBtn:hover{background:rgba(255,255,255,0.25)}
+
+/* ── 视图容器 ── */
+.view{display:none;padding:20px;max-width:600px;margin:0 auto}
+.view.active{display:block}
+
+/* ── 卡片 ── */
+.card{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;
+  box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+.card h2{font-size:15px;color:#374151;margin-bottom:14px;padding-bottom:10px;
+  border-bottom:1px solid #e5e7eb}
+
+/* ── 按钮 ── */
+.btn{display:inline-block;padding:9px 20px;border-radius:8px;border:none;
+  cursor:pointer;font-size:14px;font-family:inherit;transition:opacity 0.15s}
+.btn:hover{opacity:0.85}
+.btn-primary{background:#2563eb;color:#fff}
+.btn-danger{background:#dc2626;color:#fff}
+.btn-success{background:#16a34a;color:#fff}
+.btn-gray{background:#e5e7eb;color:#374151}
+.btn-sm{padding:5px 12px;font-size:13px}
+
+/* ── 输入框 ── */
+input[type=text],input[type=password]{width:100%;padding:9px 12px;border:1px solid #d1d5db;
+  border-radius:8px;font-size:14px;font-family:inherit;outline:none}
+input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+
+/* ── 候选人列表（管理员编辑） ── */
+#candidateList{list-style:none;margin-bottom:10px}
+#candidateList li{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 10px;background:#f9fafb;border-radius:6px;margin-bottom:6px;font-size:14px}
+#candidateList li button{background:none;border:none;color:#dc2626;cursor:pointer;font-size:16px;line-height:1}
+.editable-name:hover{color:#2563eb;text-decoration:underline dotted;}
+
+/* ── 参与者视图：候选人池 ── */
+#pool{display:flex;flex-wrap:wrap;gap:8px;min-height:48px;
+  padding:10px;background:#f9fafb;border-radius:8px;border:2px dashed #d1d5db}
+#pool.drag-over{border-color:#2563eb;background:#eff6ff}
+
+/* ── 前三名槽位 ── */
+.slot-row{display:flex;gap:10px;margin-bottom:10px}
+.slot{flex:1;min-height:52px;border-radius:8px;border:2px dashed #d1d5db;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;color:#9ca3af;position:relative;background:#fafafa}
+.slot.drag-over{border-color:#2563eb;background:#eff6ff}
+.slot-label{position:absolute;top:-10px;left:10px;background:#fff;
+  padding:0 4px;font-size:11px;color:#6b7280;font-weight:bold}
+
+/* ── 棋子标签 ── */
+.chip{padding:7px 14px;background:#2563eb;color:#fff;border-radius:20px;
+  font-size:13px;cursor:grab;user-select:none;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:6px}
+.chip:active{cursor:grabbing}
+.chip .remove{background:rgba(255,255,255,0.3);border:none;color:#fff;
+  border-radius:50%;width:16px;height:16px;font-size:11px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;padding:0;line-height:1}
+.chip.rank1{background:#f59e0b}
+.chip.rank2{background:#6b7280}
+.chip.rank3{background:#b45309}
+
+/* ── 提交记录 ── */
+#recordList{list-style:none}
+#recordList li{padding:10px 12px;background:#f9fafb;border-radius:8px;
+  margin-bottom:8px;font-size:13px;display:flex;align-items:center;gap:8px}
+.badge{padding:2px 8px;border-radius:10px;font-size:12px;font-weight:bold}
+.badge-gold{background:#fef3c7;color:#92400e}
+.badge-silver{background:#f3f4f6;color:#374151}
+.badge-none{background:#fee2e2;color:#991b1b}
+
+/* ── 结果视图 ── */
+#answerDisplay{display:flex;gap:10px;justify-content:center;margin:16px 0}
+.answer-card{text-align:center;padding:14px 20px;border-radius:10px;min-width:80px}
+.answer-card.r1{background:#fef3c7;border:2px solid #f59e0b}
+.answer-card.r2{background:#f3f4f6;border:2px solid #9ca3af}
+.answer-card.r3{background:#fdf4e7;border:2px solid #b45309}
+.answer-card .rank-num{font-size:11px;color:#6b7280;margin-bottom:4px}
+.answer-card .rank-name{font-size:16px;font-weight:bold}
+
+/* ── 弹窗 ── */
+#modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);
+  z-index:100;align-items:center;justify-content:center}
+#modal.show{display:flex}
+#modalBox{background:#fff;border-radius:12px;padding:24px;width:320px;max-width:90vw}
+#modalBox h3{margin-bottom:14px;font-size:16px}
+#modalBox .actions{margin-top:16px;display:flex;gap:8px;justify-content:flex-end}
+
+/* ── 状态提示 ── */
+.tip{font-size:13px;color:#6b7280;margin-top:6px}
+.empty{text-align:center;color:#9ca3af;font-size:13px;padding:20px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏆 猜前三名</h1>
+  <button id="adminBtn" onclick="app.toggleAdmin()">管理员</button>
+</header>
+
+<!-- ── 视图1：参与者猜测 ── -->
+<div id="viewVote" class="view active">
+  <div class="card">
+    <h2>填写你的猜测</h2>
+    <div style="margin-bottom:12px">
+      <input type="text" id="voterName" placeholder="输入你的名字" maxlength="10">
+    </div>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:8px">从下方候选人中，拖拽或点击选出你认为的前三名：</p>
+
+    <!-- 三个槽位 -->
+    <div class="slot-row">
+      <div class="slot" id="slot0" data-rank="0">
+        <span class="slot-label">🥇 第一名</span>
+        <span class="slot-hint">拖到这里</span>
+      </div>
+      <div class="slot" id="slot1" data-rank="1">
+        <span class="slot-label">🥈 第二名</span>
+        <span class="slot-hint">拖到这里</span>
+      </div>
+      <div class="slot" id="slot2" data-rank="2">
+        <span class="slot-label">🥉 第三名</span>
+        <span class="slot-hint">拖到这里</span>
+      </div>
+    </div>
+
+    <!-- 候选人池 -->
+    <p style="font-size:12px;color:#9ca3af;margin-bottom:6px">候选人（点击选入/移出）：</p>
+    <div id="pool"></div>
+
+    <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
+      <button class="btn btn-primary" onclick="app.submitGuess()">提交猜测</button>
+      <button class="btn btn-gray btn-sm" onclick="app.clearSlots()">清空重选</button>
+    </div>
+  </div>
+
+  <!-- 已提交记录 -->
+  <div class="card" id="recordCard">
+    <h2>已提交记录 <span id="recordCount" style="font-size:13px;color:#6b7280"></span></h2>
+    <ul id="recordList"><li class="empty">暂无提交</li></ul>
+  </div>
+</div>
+
+<!-- ── 视图2：管理员 ── -->
+<div id="viewAdmin" class="view">
+  <div style="text-align:right;margin-bottom:8px">
+    <button class="btn btn-gray btn-sm" onclick="app.backToVote()">← 返回参与者视图</button>
+  </div>
+  <div class="card">
+    <h2>候选人名单</h2>
+    <ul id="candidateList"></ul>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="newName" placeholder="添加候选人姓名" maxlength="10"
+        onkeydown="if(event.key==='Enter')app.addCandidate()">
+      <button class="btn btn-primary btn-sm" onclick="app.addCandidate()">添加</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>公布答案</h2>
+    <p class="tip" style="margin-bottom:12px">选择真实的前三名顺序，然后点击公布：</p>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <select id="ans0" style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:14px"><option value="">第一名</option></select>
+      <select id="ans1" style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:14px"><option value="">第二名</option></select>
+      <select id="ans2" style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:8px;font-size:14px"><option value="">第三名</option></select>
+    </div>
+    <button class="btn btn-success" onclick="app.revealAnswer()">公布答案 &amp; 判奖</button>
+    <button class="btn btn-danger btn-sm" style="margin-left:8px" onclick="app.resetAll()">重置全部</button>
+  </div>
+
+  <div class="card">
+    <h2>所有提交记录</h2>
+    <ul id="adminRecordList"><li class="empty">暂无提交</li></ul>
+  </div>
+</div>
+
+<!-- ── 视图3：结果 ── -->
+<div id="viewResult" class="view">
+  <div class="card" style="text-align:center">
+    <h2>🎉 公布结果</h2>
+    <div id="answerDisplay"></div>
+  </div>
+  <div class="card">
+    <h2>得奖名单</h2>
+    <ul id="resultList"></ul>
+  </div>
+  <div style="text-align:center;margin-top:8px">
+    <button class="btn btn-gray" onclick="app.backToVote()">返回</button>
+  </div>
+</div>
+
+<!-- ── 管理员登录弹窗 ── -->
+<div id="modal">
+  <div id="modalBox">
+    <h3>管理员验证</h3>
+    <input type="password" id="pwdInput" placeholder="输入管理员密码" onkeydown="if(event.key==='Enter')app.checkPwd()">
+    <p id="pwdErr" style="color:#dc2626;font-size:13px;margin-top:6px;display:none">密码错误</p>
+    <div class="actions">
+      <button class="btn btn-gray btn-sm" onclick="app.closeModal()">取消</button>
+      <button class="btn btn-primary btn-sm" onclick="app.checkPwd()">确认</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ADMIN_PWD = '1234'; // 管理员密码，可自行修改
+
+const app = (() => {
+  // ── 状态 ──────────────────────────────────────────────
+  let state = load() || {
+    candidates: [],
+    submissions: [],   // [{name, guess:[第1,第2,第3]}]
+    answer: null,      // [第1,第2,第3] 或 null
+    revealed: false
+  };
+
+  let slots = [null, null, null]; // 当前选择的三个槽位
+  let dragging = null;            // 正在拖拽的人名
+  let draggingFrom = null;        // 'pool' | 0|1|2
+
+  // ── 持久化 ────────────────────────────────────────────
+  function save() { localStorage.setItem('guess3', JSON.stringify(state)); }
+  function load() {
+    try { return JSON.parse(localStorage.getItem('guess3')); } catch { return null; }
+  }
+
+  // ── 视图切换 ──────────────────────────────────────────
+  function showView(id) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  // ── 管理员入口 ────────────────────────────────────────
+  function toggleAdmin() {
+    document.getElementById('modal').classList.add('show');
+    document.getElementById('pwdInput').value = '';
+    document.getElementById('pwdErr').style.display = 'none';
+    setTimeout(() => document.getElementById('pwdInput').focus(), 50);
+  }
+  function closeModal() { document.getElementById('modal').classList.remove('show'); }
+  function checkPwd() {
+    if (document.getElementById('pwdInput').value === ADMIN_PWD) {
+      closeModal();
+      openAdmin();
+    } else {
+      document.getElementById('pwdErr').style.display = 'block';
+    }
+  }
+  function openAdmin() {
+    renderCandidateList();
+    renderAnswerSelects();
+    renderAdminRecords();
+    showView('viewAdmin');
+  }
+
+  // ── 候选人管理 ────────────────────────────────────────
+  function renderCandidateList() {
+    const ul = document.getElementById('candidateList');
+    ul.innerHTML = state.candidates.map((n,i) =>
+      `<li>
+        <span class="editable-name" onclick="app.startEdit(this,${i})"
+          title="点击编辑" style="cursor:pointer;flex:1">${n}</span>
+        <button onclick="app.removeCandidate(${i})" title="删除">✕</button>
+      </li>`
+    ).join('') || '<li style="color:#9ca3af;font-size:13px">暂无候选人，请在下方添加</li>';
+  }
+  function startEdit(el, i) {
+    if (el.querySelector('input')) return; // 已在编辑中
+    const old = state.candidates[i];
+    el.innerHTML = `<input type="text" value="${old}" maxlength="10"
+      style="width:100%;padding:2px 6px;border:1px solid #2563eb;border-radius:4px;font-size:14px"
+      onblur="app.finishEdit(this,${i})"
+      onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value='${old}';this.blur();}">`;
+    el.querySelector('input').focus();
+    el.querySelector('input').select();
+  }
+  function finishEdit(inp, i) {
+    const val = inp.value.trim();
+    if (val && val !== state.candidates[i]) {
+      if (state.candidates.includes(val)) { alert('已存在该候选人'); }
+      else { state.candidates[i] = val; save(); renderAnswerSelects(); renderPool(); }
+    }
+    renderCandidateList();
+  }
+  function addCandidate() {
+    const inp = document.getElementById('newName');
+    const name = inp.value.trim();
+    if (!name) return;
+    if (state.candidates.includes(name)) { alert('已存在该候选人'); return; }
+    state.candidates.push(name);
+    inp.value = '';
+    save();
+    renderCandidateList();
+    renderAnswerSelects();
+    renderPool();
+  }
+  function removeCandidate(i) {
+    if (!confirm(`确认删除「${state.candidates[i]}」？`)) return;
+    state.candidates.splice(i, 1);
+    save();
+    renderCandidateList();
+    renderAnswerSelects();
+    renderPool();
+  }
+
+  // ── 候选人池渲染 ──────────────────────────────────────
+  function renderPool() {
+    const pool = document.getElementById('pool');
+    const used = slots.filter(Boolean);
+    const available = state.candidates.filter(n => !used.includes(n));
+    pool.innerHTML = available.length
+      ? available.map(n =>
+          `<span class="chip" draggable="true"
+            ondragstart="app.onDragStart(event,'pool','${n}')"
+            onclick="app.clickChip('${n}')">${n}</span>`
+        ).join('')
+      : '<span style="color:#9ca3af;font-size:13px">所有候选人已选入</span>';
+  }
+
+  // ── 槽位渲染 ──────────────────────────────────────────
+  const rankClass = ['rank1','rank2','rank3'];
+  const rankLabel = ['🥇 第一名','🥈 第二名','🥉 第三名'];
+  function renderSlots() {
+    for (let i = 0; i < 3; i++) {
+      const slot = document.getElementById('slot' + i);
+      if (slots[i]) {
+        slot.innerHTML = `<span class="slot-label">${rankLabel[i]}</span>
+          <span class="chip ${rankClass[i]}" draggable="true"
+            ondragstart="app.onDragStart(event,${i},'${slots[i]}')"
+            onclick="app.removeFromSlot(${i})">${slots[i]}
+            <button class="remove" title="移出">✕</button>
+          </span>`;
+      } else {
+        slot.innerHTML = `<span class="slot-label">${rankLabel[i]}</span>
+          <span class="slot-hint" style="color:#9ca3af;font-size:13px">点击或拖入</span>`;
+      }
+    }
+  }
+
+  // ── 点击选入/移出 ─────────────────────────────────────
+  function clickChip(name) {
+    const emptyIdx = slots.indexOf(null);
+    if (emptyIdx === -1) { alert('三个名次已满，请先移出一个'); return; }
+    slots[emptyIdx] = name;
+    renderSlots(); renderPool();
+  }
+  function removeFromSlot(i) {
+    slots[i] = null;
+    renderSlots(); renderPool();
+  }
+  function clearSlots() {
+    slots = [null, null, null];
+    renderSlots(); renderPool();
+  }
+
+  // ── 拖拽逻辑 ──────────────────────────────────────────
+  function onDragStart(e, from, name) {
+    dragging = name; draggingFrom = from;
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  // 绑定槽位拖拽事件
+  function bindDragEvents() {
+    for (let i = 0; i < 3; i++) {
+      const slot = document.getElementById('slot' + i);
+      slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-over'); });
+      slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+      slot.addEventListener('drop', e => {
+        e.preventDefault(); slot.classList.remove('drag-over');
+        if (!dragging) return;
+        // 如果槽位已有人，换回来源
+        const prev = slots[i];
+        slots[i] = dragging;
+        if (draggingFrom === 'pool') {
+          // 如果目标槽有人，把他放回 pool（不需要操作，renderPool 会自动排除 slots 里的）
+        } else if (typeof draggingFrom === 'number') {
+          slots[draggingFrom] = prev; // 交换
+        }
+        dragging = null; draggingFrom = null;
+        renderSlots(); renderPool();
+      });
+    }
+    const pool = document.getElementById('pool');
+    pool.addEventListener('dragover', e => { e.preventDefault(); pool.classList.add('drag-over'); });
+    pool.addEventListener('dragleave', () => pool.classList.remove('drag-over'));
+    pool.addEventListener('drop', e => {
+      e.preventDefault(); pool.classList.remove('drag-over');
+      if (typeof draggingFrom === 'number') {
+        slots[draggingFrom] = null;
+        renderSlots(); renderPool();
+      }
+      dragging = null; draggingFrom = null;
+    });
+  }
+
+  // ── 提交猜测 ──────────────────────────────────────────
+  function submitGuess() {
+    if (state.revealed) { alert('答案已公布，不能再提交'); return; }
+    const name = document.getElementById('voterName').value.trim();
+    if (!name) { alert('请先输入你的名字'); return; }
+    if (slots.some(s => !s)) { alert('请选满前三名再提交'); return; }
+    if (state.submissions.find(s => s.name === name)) {
+      if (!confirm(`「${name}」已提交过，确认覆盖？`)) return;
+      state.submissions = state.submissions.filter(s => s.name !== name);
+    }
+    state.submissions.push({ name, guess: [...slots] });
+    save();
+    clearSlots();
+    document.getElementById('voterName').value = '';
+    renderRecords();
+    alert(`✅ 提交成功！${name} 的猜测已记录`);
+  }
+
+  // ── 提交记录渲染（参与者视图） ────────────────────────
+  function renderRecords() {
+    const ul = document.getElementById('recordList');
+    const cnt = document.getElementById('recordCount');
+    cnt.textContent = `（${state.submissions.length} 人）`;
+    if (!state.submissions.length) {
+      ul.innerHTML = '<li class="empty">暂无提交</li>'; return;
+    }
+    ul.innerHTML = state.submissions.map(s => {
+      const result = state.revealed ? judgeResult(s.guess, state.answer) : null;
+      const badge = result
+        ? `<span class="badge ${result==='大奖'?'badge-gold':result==='小奖'?'badge-silver':'badge-none'}">${result}</span>`
+        : '';
+      return `<li>
+        <span style="font-weight:bold;min-width:60px">${s.name}</span>
+        <span style="color:#6b7280;flex:1">${s.guess.join(' → ')}</span>
+        ${badge}
+      </li>`;
+    }).join('');
+  }
+
+  // ── 管理员记录渲染 ────────────────────────────────────
+  function renderAdminRecords() {
+    const ul = document.getElementById('adminRecordList');
+    if (!state.submissions.length) {
+      ul.innerHTML = '<li class="empty">暂无提交</li>'; return;
+    }
+    ul.innerHTML = state.submissions.map((s,i) =>
+      `<li>
+        <span style="color:#9ca3af;font-size:12px;min-width:20px">${i+1}.</span>
+        <span style="font-weight:bold;min-width:60px">${s.name}</span>
+        <span style="color:#6b7280;flex:1;font-size:13px">${s.guess.join(' → ')}</span>
+        <button class="btn btn-danger btn-sm" onclick="app.deleteRecord(${i})">删除</button>
+      </li>`
+    ).join('');
+  }
+  function deleteRecord(i) {
+    if (!confirm('确认删除该记录？')) return;
+    state.submissions.splice(i, 1);
+    save(); renderAdminRecords(); renderRecords();
+  }
+
+  // ── 答案下拉框 ────────────────────────────────────────
+  function renderAnswerSelects() {
+    for (let i = 0; i < 3; i++) {
+      const sel = document.getElementById('ans' + i);
+      const cur = sel.value;
+      sel.innerHTML = `<option value="">${['第一名','第二名','第三名'][i]}</option>` +
+        state.candidates.map(n => `<option value="${n}"${n===cur?' selected':''}>${n}</option>`).join('');
+    }
+  }
+
+  // ── 判奖逻辑 ──────────────────────────────────────────
+  function judgeResult(guess, answer) {
+    const guessSet = new Set(guess);
+    const answerSet = new Set(answer);
+    const allIn = [...answerSet].every(p => guessSet.has(p));
+    if (!allIn) return '未中奖';
+    const orderOk = guess.every((p, i) => p === answer[i]);
+    return orderOk ? '大奖' : '小奖';
+  }
+
+  // ── 公布答案 ──────────────────────────────────────────
+  function revealAnswer() {
+    const ans = [0,1,2].map(i => document.getElementById('ans'+i).value);
+    if (ans.some(v => !v)) { alert('请选择完整的前三名'); return; }
+    if (new Set(ans).size < 3) { alert('前三名不能重复'); return; }
+    if (!confirm(`确认公布答案：${ans.join(' → ')}？`)) return;
+    state.answer = ans;
+    state.revealed = true;
+    save();
+    showResult();
+  }
+
+  // ── 结果视图 ──────────────────────────────────────────
+  function showResult() {
+    const ans = state.answer;
+    const rankColors = ['r1','r2','r3'];
+    const rankNums = ['🥇 第一名','🥈 第二名','🥉 第三名'];
+    document.getElementById('answerDisplay').innerHTML = ans.map((n,i) =>
+      `<div class="answer-card ${rankColors[i]}">
+        <div class="rank-num">${rankNums[i]}</div>
+        <div class="rank-name">${n}</div>
+      </div>`
+    ).join('');
+
+    const results = state.submissions.map(s => ({
+      ...s, result: judgeResult(s.guess, ans)
+    }));
+    const order = {'大奖':0,'小奖':1,'未中奖':2};
+    results.sort((a,b) => order[a.result] - order[b.result]);
+
+    const ul = document.getElementById('resultList');
+    ul.innerHTML = results.length
+      ? results.map(r => {
+          const icon = r.result==='大奖'?'🏆':r.result==='小奖'?'🎖️':'';
+          return `<li>
+            <span style="font-size:18px;min-width:28px">${icon}</span>
+            <span style="font-weight:bold;min-width:70px">${r.name}</span>
+            <span style="color:#6b7280;flex:1;font-size:13px">${r.guess.join(' → ')}</span>
+            <span class="badge ${r.result==='大奖'?'badge-gold':r.result==='小奖'?'badge-silver':'badge-none'}">${r.result}</span>
+          </li>`;
+        }).join('')
+      : '<li class="empty">暂无参与记录</li>';
+
+    showView('viewResult');
+    renderRecords(); // 同步更新参与者视图的 badge
+  }
+
+  function backToVote() { showView('viewVote'); }
+
+  // ── 重置 ──────────────────────────────────────────────
+  function resetAll() {
+    if (!confirm('确认重置所有数据（提交记录和答案将清空，候选人保留）？')) return;
+    state.submissions = [];
+    state.answer = null;
+    state.revealed = false;
+    save();
+    renderAdminRecords();
+    renderRecords();
+    alert('已重置');
+  }
+
+  // ── 初始化 ────────────────────────────────────────────
+  function init() {
+    renderPool();
+    renderSlots();
+    renderRecords();
+    bindDragEvents();
+    if (state.revealed) {
+      // 已公布则直接显示结果
+      showResult();
+    }
+  }
+
+  init();
+
+  return {
+    toggleAdmin, closeModal, checkPwd,
+    addCandidate, removeCandidate, startEdit, finishEdit,
+    onDragStart, clickChip, removeFromSlot, clearSlots,
+    submitGuess, deleteRecord,
+    revealAnswer, backToVote, resetAll
+  };
+})();
+</script>
+</body>
+</html>
