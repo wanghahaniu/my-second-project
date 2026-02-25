@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云策略台账系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, '微软雅黑';
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+        }
+
+        .section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="date"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #e9ecef;
+            color: #333;
+            margin-right: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #dee2e6;
+        }
+
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .btn-danger:hover {
+            background: #ff5252;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .tab-btn {
+            padding: 10px 15px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            color: #999;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            margin-bottom: -1px;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 8px;
+        }
+
+        .item-title {
+            font-weight: 600;
+            color: #333;
+            flex: 1;
+        }
+
+        .item-speaker {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-right: 8px;
+        }
+
+        .item-speaker.category-A {
+            background: #4c6ef5;
+        }
+
+        .item-speaker.category-B {
+            background: #15aabf;
+        }
+
+        .item-speaker.category-C {
+            background: #f59f00;
+        }
+
+        .item-date {
+            color: #999;
+            font-size: 12px;
+        }
+
+        .item-content {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .item-tags {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #e7f5ff;
+            color: #1971c2;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .empty {
+            text-align: center;
+            color: #999;
+            padding: 30px 20px;
+            font-size: 13px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .filter-group select {
+            flex: 1;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>☁️ 云策略台账系统</h1>
+            <p>记录群众智慧，管理策略演进</p>
+        </div>
+
+        <div class="main-content">
+            <!-- 左侧：数据输入 -->
+            <div>
+                <div class="section">
+                    <h2>📝 记录发言</h2>
+                    <div class="form-group">
+                        <label>发言人</label>
+                        <input type="text" id="speaker" placeholder="输入发言人名字">
+                    </div>
+                    <div class="form-group">
+                        <label>发言内容</label>
+                        <textarea id="content" placeholder="输入发言内容或建议..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>发言日期</label>
+                        <input type="date" id="date">
+                    </div>
+                    <div class="form-group">
+                        <label>策略分类</label>
+                        <select id="category">
+                            <option value="">-- 选择所属策略 --</option>
+                            <option value="A策略">A策略</option>
+                            <option value="B策略">B策略</option>
+                            <option value="C策略">C策略</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="addSpeech()">➕ 添加发言</button>
+                </div>
+
+                <div class="section" style="margin-top: 20px;">
+                    <h2>📊 统计信息</h2>
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalSpeaks">0</div>
+                            <div class="stat-label">总发言数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalSpeakers">0</div>
+                            <div class="stat-label">发言人数</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalPolicies">0</div>
+                            <div class="stat-label">策略数</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="exportData()" style="width: 48%; margin-right: 4%;">📥 导出数据</button>
+                    <button class="btn btn-danger" onclick="clearData()" style="width: 48%;">🗑️ 清空数据</button>
+                </div>
+            </div>
+
+            <!-- 右侧：数据展示 -->
+            <div>
+                <div class="section">
+                    <h2>📋 策略管理</h2>
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="switchTab('all-speeches')">所有发言</button>
+                        <button class="tab-btn" onclick="switchTab('by-person')">按人员分类</button>
+                        <button class="tab-btn" onclick="switchTab('by-policy')">按策略分类</button>
+                    </div>
+
+                    <!-- 所有发言 -->
+                    <div id="all-speeches" class="tab-content active">
+                        <div class="filter-group">
+                            <select id="filterCategory" onchange="filterSpeechesAndPolicies()">
+                                <option value="">所有类别</option>
+                                <option value="A策略">A策略</option>
+                                <option value="B策略">B策略</option>
+                                <option value="C策略">C策略</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div id="speechesList"></div>
+                    </div>
+
+                    <!-- 按人员分类 -->
+                    <div id="by-person" class="tab-content">
+                        <div class="filter-group">
+                            <select id="filterSpeaker" onchange="filterByPerson()">
+                                <option value="">所有人员</option>
+                            </select>
+                        </div>
+                        <div id="personList"></div>
+                    </div>
+
+                    <!-- 按策略分类 -->
+                    <div id="by-policy" class="tab-content">
+                        <div id="policyList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认弹窗 -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <h3>⚠️ 确认删除?</h3>
+            <p>删除后无法恢复，确定要删除此项吗？</p>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">取消</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 数据存储
+        let speeches = [];
+        let deleteIndex = -1;
+
+        // 初始化
+        function init() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').value = today;
+            loadData();
+            updateStats();
+            renderAll();
+        }
+
+        // 保存数据到localStorage
+        function saveData() {
+            localStorage.setItem('speeches', JSON.stringify(speeches));
+        }
+
+        // 加载数据
+        function loadData() {
+            const data = localStorage.getItem('speeches');
+            if (data) {
+                speeches = JSON.parse(data);
+            }
+        }
+
+        // 添加发言
+        function addSpeech() {
+            const speaker = document.getElementById('speaker').value.trim();
+            const content = document.getElementById('content').value.trim();
+            const date = document.getElementById('date').value;
+            const category = document.getElementById('category').value;
+
+            if (!speaker || !content) {
+                alert('请填写发言人和发言内容');
+                return;
+            }
+
+            speeches.push({
+                speaker,
+                content,
+                date,
+                category: category || '未分类',
+                id: Date.now()
+            });
+
+            saveData();
+            clearForm();
+            updateStats();
+            renderAll();
+        }
+
+        // 清空表单
+        function clearForm() {
+            document.getElementById('speaker').value = '';
+            document.getElementById('content').value = '';
+            document.getElementById('category').value = '';
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date').value = today;
+        }
+
+        // 删除发言
+        function deleteSpeech(id) {
+            deleteIndex = speeches.findIndex(s => s.id === id);
+            if (deleteIndex !== -1) {
+                document.getElementById('deleteModal').classList.add('active');
+            }
+        }
+
+        function confirmDelete() {
+            if (deleteIndex !== -1) {
+                speeches.splice(deleteIndex, 1);
+                saveData();
+                updateStats();
+                renderAll();
+                closeDeleteModal();
+            }
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+            deleteIndex = -1;
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            document.getElementById('totalSpeaks').textContent = speeches.length;
+            
+            const speakers = new Set(speeches.map(s => s.speaker)).size;
+            document.getElementById('totalSpeakers').textContent = speakers;
+
+            const policies = new Set(speeches.map(s => s.category)).size;
+            document.getElementById('totalPolicies').textContent = policies;
+
+            // 更新人员筛选
+            const speakerSelect = document.getElementById('filterSpeaker');
+            const currentValue = speakerSelect.value;
+            speakerSelect.innerHTML = '<option value="">所有人员</option>';
+            
+            new Set(speeches.map(s => s.speaker)).forEach(speaker => {
+                const option = document.createElement('option');
+                option.value = speaker;
+                option.textContent = speaker;
+                speakerSelect.appendChild(option);
+            });
+            speakerSelect.value = currentValue;
+        }
+
+        // 切换tab
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'by-policy') {
+                renderByPolicy();
+            } else if (tabName === 'by-person') {
+                renderByPerson();
+            }
+        }
+
+        // 渲染所有发言
+        function renderAll() {
+            filterSpeechesAndPolicies();
+        }
+
+        function filterSpeechesAndPolicies() {
+            const category = document.getElementById('filterCategory').value;
+            const filtered = category ? speeches.filter(s => s.category === category) : speeches;
+            const sorted = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            const html = sorted.map(speech => createSpeechHTML(speech)).join('');
+            document.getElementById('speechesList').innerHTML = html || '<div class="empty">暂无发言记录</div>';
+        }
+
+        // 按人员分类
+        function renderByPerson() {
+            const grouped = {};
+            speeches.forEach(speech => {
+                if (!grouped[speech.speaker]) {
+                    grouped[speech.speaker] = [];
+                }
+                grouped[speech.speaker].push(speech);
+            });
+
+            let html = '';
+            Object.keys(grouped).sort().forEach(speaker => {
+                const items = grouped[speaker];
+                html += `<div style="margin-bottom: 20px;">
+                    <div style="background: #667eea; color: white; padding: 10px; border-radius: 4px; margin-bottom: 10px; font-weight: 500;">
+                        ${speaker} <span style="background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 3px; font-size: 12px;">${items.length} 次发言</span>
+                    </div>
+                    ${items.map(s => createSpeechHTML(s)).join('')}
+                </div>`;
+            });
+
+            document.getElementById('personList').innerHTML = html || '<div class="empty">暂无发言记录</div>';
+        }
+
+        // 按策略分类
+        function renderByPolicy() {
+            const grouped = {};
+            speeches.forEach(speech => {
+                if (!grouped[speech.category]) {
+                    grouped[speech.category] = [];
+                }
+                grouped[speech.category].push(speech);
+            });
+
+            let html = '';
+            Object.keys(grouped).sort().forEach(policy => {
+                const items = grouped[policy];
+                const contributors = new Set(items.map(s => s.speaker)).size;
+                html += `<div style="margin-bottom: 20px;">
+                    <div style="background: #667eea; color: white; padding: 10px; border-radius: 4px; margin-bottom: 10px; font-weight: 500;">
+                        ${policy} <span style="background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 3px; font-size: 12px;">${items.length} 条 | ${contributors} 人</span>
+                    </div>
+                    <div style="margin-left: 10px;">
+                        <strong>贡献者：</strong> ${[...new Set(items.map(s => s.speaker))].join('、')}
+                    </div>
+                    ${items.map(s => createSpeechHTML(s)).join('')}
+                </div>`;
+            });
+
+            document.getElementById('policyList').innerHTML = html || '<div class="empty">暂无记录</div>';
+        }
+
+        // 创建发言HTML
+        function createSpeechHTML(speech) {
+            return `<div class="item">
+                <div class="item-header">
+                    <div>
+                        <span class="item-speaker">${escapeHtml(speech.speaker)}</span>
+                        <span class="tag" style="background: #f0f0f0; color: #333;">${escapeHtml(speech.category)}</span>
+                    </div>
+                    <button class="btn btn-danger" onclick="deleteSpeech(${speech.id})">删除</button>
+                </div>
+                <div class="item-content">${escapeHtml(speech.content)}</div>
+                <div class="item-date">📅 ${speech.date}</div>
+            </div>`;
+        }
+
+        // 按人员筛选
+        function filterByPerson() {
+            const speaker = document.getElementById('filterSpeaker').value;
+            const filtered = speaker ? speeches.filter(s => s.speaker === speaker) : speeches;
+            
+            let html = '';
+            if (filtered.length > 0) {
+                const speakers = new Set(filtered.map(s => s.speaker));
+                speakers.forEach(sp => {
+                    const items = filtered.filter(s => s.speaker === sp);
+                    html += `<div style="margin-bottom: 20px;">
+                        <div style="background: #667eea; color: white; padding: 10px; border-radius: 4px; margin-bottom: 10px; font-weight: 500;">
+                            ${sp} <span style="background: rgba(255,255,255,0.3); padding: 2px 8px; border-radius: 3px; font-size: 12px;">${items.length} 次发言</span>
+                        </div>
+                        ${items.map(s => createSpeechHTML(s)).join('')}
+                    </div>`;
+                });
+            } else {
+                html = '<div class="empty">暂无发言记录</div>';
+            }
+            
+            document.getElementById('personList').innerHTML = html;
+        }
+
+        // 导出数据
+        function exportData() {
+            const dataStr = JSON.stringify(speeches, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `策略台账_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 清空数据
+        function clearData() {
+            if (confirm('确定要清空所有数据吗？此操作无法撤销！')) {
+                speeches = [];
+                saveData();
+                updateStats();
+                renderAll();
+            }
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 页面加载
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
