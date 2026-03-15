@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>黑天鹅识别与认知套利</title>
+  <style>
+    :root {
+      --bg: #f3efe5;
+      --bg-soft: #fbf8f1;
+      --panel: rgba(255, 252, 245, 0.88);
+      --ink: #1e1d1a;
+      --muted: #655f52;
+      --line: rgba(78, 66, 42, 0.16);
+      --accent: #a33f2f;
+      --accent-2: #204b57;
+      --shadow: 0 24px 60px rgba(58, 44, 24, 0.14);
+      --radius: 24px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(163, 63, 47, 0.18), transparent 34%),
+        radial-gradient(circle at top right, rgba(32, 75, 87, 0.15), transparent 28%),
+        linear-gradient(180deg, #f8f3e8 0%, #f1ead9 100%);
+      line-height: 1.7;
+    }
+
+    .backdrop {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: linear-gradient(180deg, black 0%, rgba(0, 0, 0, 0.18) 100%);
+    }
+
+    .page {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 48px 0 80px;
+    }
+
+    .hero {
+      padding: 40px;
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) + 4px);
+      background:
+        linear-gradient(135deg, rgba(255, 248, 236, 0.94), rgba(255, 252, 247, 0.76)),
+        linear-gradient(180deg, rgba(163, 63, 47, 0.06), rgba(32, 75, 87, 0.05));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 320px;
+      height: 320px;
+      right: -100px;
+      top: -120px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(163, 63, 47, 0.18), transparent 70%);
+    }
+
+    .eyebrow {
+      display: inline-block;
+      margin-bottom: 16px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(32, 75, 87, 0.1);
+      color: var(--accent-2);
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      line-height: 1.15;
+      font-weight: 700;
+    }
+
+    h1 {
+      max-width: 800px;
+      font-size: clamp(2.4rem, 5vw, 4.8rem);
+      letter-spacing: -0.04em;
+    }
+
+    .lead {
+      max-width: 760px;
+      margin-top: 20px;
+      font-size: 1.08rem;
+      color: var(--muted);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 28px;
+    }
+
+    .hero-card,
+    .panel,
+    .score-card,
+    .path-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 18px 20px;
+    }
+
+    .hero-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.92rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .section {
+      margin-top: 34px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .section-head p {
+      max-width: 640px;
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .section-badge {
+      color: var(--accent);
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .panel {
+      padding: 26px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 20px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+    }
+
+    .panel h3 {
+      margin-bottom: 12px;
+      font-size: 1.2rem;
+    }
+
+    ol,
+    ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    li + li {
+      margin-top: 10px;
+    }
+
+    .steps {
+      display: grid;
+      gap: 14px;
+    }
+
+    .step {
+      padding: 18px 18px 18px 20px;
+      border-left: 4px solid var(--accent);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.44);
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 1rem;
+    }
+
+    .quote {
+      margin: 0;
+      padding: 24px;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(32, 75, 87, 0.92), rgba(24, 52, 61, 0.92));
+      color: #f7f3eb;
+      box-shadow: var(--shadow);
+    }
+
+    .quote p {
+      margin: 0;
+      font-size: clamp(1.25rem, 2.2vw, 1.9rem);
+      line-height: 1.35;
+      letter-spacing: -0.02em;
+    }
+
+    .quote small {
+      display: block;
+      margin-top: 14px;
+      color: rgba(247, 243, 235, 0.78);
+      font-size: 0.92rem;
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .score-card {
+      padding: 18px;
+    }
+
+    .score-card strong {
+      display: block;
+      color: var(--muted);
+      font-size: 0.86rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .score-card span {
+      display: block;
+      margin-top: 8px;
+      color: var(--accent);
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .path-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .path-card {
+      padding: 18px;
+    }
+
+    .path-card h3 {
+      font-size: 1.02rem;
+      margin-bottom: 8px;
+    }
+
+    .formula {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(163, 63, 47, 0.08);
+      border: 1px solid rgba(163, 63, 47, 0.12);
+      font-weight: 600;
+    }
+
+    .template {
+      margin-top: 18px;
+      padding: 20px;
+      border-radius: 18px;
+      background: #181713;
+      color: #f7f3eb;
+      overflow-x: auto;
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+      font-size: 0.95rem;
+      white-space: pre-wrap;
+    }
+
+    .footer {
+      margin-top: 32px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid,
+      .grid-2,
+      .grid-3,
+      .score-grid,
+      .path-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .page {
+        width: min(100% - 20px, 1120px);
+        padding-top: 20px;
+      }
+
+      .hero {
+        padding: 26px 20px;
+      }
+
+      .section-head {
+        display: block;
+      }
+
+      .section-head p {
+        margin-top: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="backdrop"></div>
+  <main class="page">
+    <section class="hero">
+      <span class="eyebrow">Black Swan Detection</span>
+      <h1>黑天鹅识别分析系统与认知套利框架</h1>
+      <p class="lead">
+        这是一套把“重大事件分析”与“叙事错位识别”合并起来的工作框架。第一部分用于判断战争、政治冲突、金融危机中是否存在集体误判，第二部分用于识别市场叙事与真实世界之间的套利空间。
+      </p>
+      <div class="hero-grid">
+        <article class="hero-card">
+          <strong>核心问题</strong>
+          <div>当前主流叙事是否因为历史惯性而误判真实风险？</div>
+        </article>
+        <article class="hero-card">
+          <strong>分析对象</strong>
+          <div>战争、地缘政治冲突、能源危机、信用危机、政策级冲击。</div>
+        </article>
+        <article class="hero-card">
+          <strong>判断重点</strong>
+          <div>当旧叙事给新结构定价时，黑天鹅与认知套利同时出现。</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-badge">Part 1</div>
+          <h2>黑天鹅识别分析系统</h2>
+        </div>
+        <p>围绕“当前叙事、认知偏差、变量差异、黑天鹅路径、概率评估”五个层次进行拆解。</p>
+      </div>
+
+      <div class="grid-2">
+        <article class="panel">
+          <h3>分析流程</h3>
+          <div class="steps">
+            <div class="step">
+              <strong>第一步：识别当前主流叙事</strong>
+              总结媒体、市场和专家对事件的主流观点，提炼“现在大家最相信的故事”。
+            </div>
+            <div class="step">
+              <strong>第二步：检测历史类比</strong>
+              判断叙事是否过度引用历史案例，是否用旧地图线性推演新结构。
+            </div>
+            <div class="step">
+              <strong>第三步：识别认知偏差</strong>
+              重点扫描锚定效应、线性思维、可得性偏差、群体叙事。
+            </div>
+            <div class="step">
+              <strong>第四步：分析关键变量差异</strong>
+              从政权结构、军事体系、地理条件、社会动员、外部联盟、能源影响、全球市场影响七个维度比较“这次”和“上次”。
+            </div>
+            <div class="step">
+              <strong>第五步：黑天鹅概率评估</strong>
+              如果历史类比很强，而关键变量差异显著，则集体误判概率上升。
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h3>输出结果</h3>
+          <ol>
+            <li>当前叙事</li>
+            <li>认知偏差分析</li>
+            <li>关键变量差异</li>
+            <li>可能出现的黑天鹅路径</li>
+            <li>黑天鹅概率评估</li>
+          </ol>
+
+          <h3 style="margin-top: 22px;">偏差清单</h3>
+          <ul>
+            <li>锚定效应：是否锚定在旧危机模板、旧价格区间、旧结论上。</li>
+            <li>线性思维：是否默认事件会按固定次序平滑演进。</li>
+            <li>可得性偏差：是否因为过去几次没失控，就默认这次也不会。</li>
+            <li>群体叙事：是否多方主体都在复述同一套共识逻辑。</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="grid-3">
+        <article class="panel">
+          <h3>关键变量差异</h3>
+          <ul>
+            <li>政权结构</li>
+            <li>军事体系</li>
+            <li>地理条件</li>
+            <li>社会动员</li>
+            <li>外部联盟</li>
+            <li>能源影响</li>
+            <li>全球市场影响</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h3>黑天鹅触发条件</h3>
+          <ul>
+            <li>历史类比强</li>
+            <li>变量差异大</li>
+            <li>隐变量被忽视</li>
+            <li>市场共识过度集中</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h3>一句话判别</h3>
+          <p>
+            如果主流分析还在用旧叙事解释新结构，而关键约束已经变化，那么市场对风险的定价很可能偏低，黑天鹅路径就值得重点跟踪。
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-badge">Part 2</div>
+          <h2>认知套利</h2>
+        </div>
+        <p>认知套利不是“别人不知道”，而是“别人知道，但理解错了”。</p>
+      </div>
+
+      <blockquote class="quote">
+        <p>市场叙事 VS 真实世界</p>
+        <small>认知套利的核心，是被广泛相信的解释框架与真正驱动结果的底层变量之间的偏差。</small>
+      </blockquote>
+
+      <div class="grid-2" style="margin-top: 20px;">
+        <article class="panel">
+          <h3>本质定义</h3>
+          <p>市场交易的往往不是事实本身，而是“大家以为事实意味着什么”。只要叙事和现实演化之间存在偏差，就会出现认知套利。</p>
+          <div class="formula">认知套利 = 叙事定价 - 现实演化</div>
+          <h3 style="margin-top: 22px;">三种典型形态</h3>
+          <ul>
+            <li>叙事过度简化现实。</li>
+            <li>叙事沿用旧模板，现实进入新结构。</li>
+            <li>叙事盯着显性变量，现实由隐性变量驱动。</li>
+          </ul>
+        </article>
+
+        <article class="panel">
+          <h3>与其他套利的区别</h3>
+          <ul>
+            <li><strong>信息套利：</strong>别人不知道。</li>
+            <li><strong>认知套利：</strong>别人知道，但解释错。</li>
+            <li><strong>结构套利：</strong>别人解释对了，但仓位和制度反应跟不上。</li>
+          </ul>
+          <p style="margin-top: 16px;">
+            放到黑天鹅框架里，可以压缩成一句话：当主流叙事仍在旧世界，而真实世界已经切入新逻辑时，认知套利就出现了。
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-badge">Signals</div>
+          <h2>识别认知套利的 5 个信号</h2>
+        </div>
+        <p>共识越强、类比越旧、隐变量越被忽略，认知套利越值得关注。</p>
+      </div>
+
+      <div class="grid-3">
+        <article class="panel">
+          <h3>1. 叙事高度统一</h3>
+          <p>媒体、专家、交易员开始反复使用同一套话术，比如“可控”“短期”“不会外溢”，说明共识模板已经形成。</p>
+        </article>
+        <article class="panel">
+          <h3>2. 历史类比被过度使用</h3>
+          <p>当分析大量借用 1973、1990、2008、2022 这类旧案例时，往往意味着大家在用旧地图走新地形。</p>
+        </article>
+        <article class="panel">
+          <h3>3. 显性变量压过隐性变量</h3>
+          <p>市场只盯油价、利率、指数，但真正改变结果的可能是保险、港口、联盟裂缝、社会动员和信用收缩。</p>
+        </article>
+        <article class="panel">
+          <h3>4. 讲故事的人多，接近现场的人少</h3>
+          <p>评论越来越流畅，一线信号却越来越稀薄，说明市场正在交易解释，而不是交易真实约束。</p>
+        </article>
+        <article class="panel">
+          <h3>5. 共识前提没有被说清</h3>
+          <p>很多坚定结论都依赖脆弱前提，比如“不会升级”“央行仍能托底”“联盟不会裂开”。这些前提一旦失效，重定价会很快。</p>
+        </article>
+        <article class="panel">
+          <h3>实战公式</h3>
+          <p>认知套利概率 = 共识强度 × 历史类比强度 × 隐变量被忽视程度。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-badge">Template</div>
+          <h2>认知套利分析卡片</h2>
+        </div>
+        <p>用于对任何战争、政治冲突、金融危机做快速半结构化判断。</p>
+      </div>
+
+      <div class="score-grid">
+        <article class="score-card">
+          <strong>共识强度</strong>
+          <span>低 / 中 / 高</span>
+        </article>
+        <article class="score-card">
+          <strong>类比强度</strong>
+          <span>低 / 中 / 高</span>
+        </article>
+        <article class="score-card">
+          <strong>变量差异</strong>
+          <span>低 / 中 / 高</span>
+        </article>
+        <article class="score-card">
+          <strong>隐变量忽视</strong>
+          <span>低 / 中 / 高</span>
+        </article>
+      </div>
+
+      <div class="path-grid" style="margin-top: 20px;">
+        <article class="path-card">
+          <h3>错位点定位</h3>
+          <p>市场在交易什么？真实世界在发生什么？两者的偏差究竟落在价格、机制还是行为上？</p>
+        </article>
+        <article class="path-card">
+          <h3>黑天鹅路径</h3>
+          <p>列出 2 到 3 条非线性演化路径，并写清各自的触发条件。</p>
+        </article>
+        <article class="path-card">
+          <h3>一句话压缩</h3>
+          <p>当前最大的认知套利，不在于市场没看到风险，而在于市场仍用旧叙事给新结构定价。</p>
+        </article>
+      </div>
+
+      <div class="template">事件：
+主流叙事：
+历史类比：
+锚定效应：
+线性思维：
+可得性偏差：
+群体叙事：
+政权结构差异：
+军事体系差异：
+地理条件差异：
+社会动员差异：
+外部联盟差异：
+能源影响差异：
+全球市场影响差异：
+现实世界异常信号：
+市场定价对象：
+真实世界演化对象：
+核心错位点：
+黑天鹅路径 1：
+黑天鹅路径 2：
+黑天鹅路径 3：
+认知套利概率：
+一句话结论：</div>
+    </section>
+
+    <p class="footer">页面内容基于本次聊天整理，适合作为单页阅读稿、分析底稿或后续扩展为完整研究框架。</p>
+  </main>
+</body>
+</html>
