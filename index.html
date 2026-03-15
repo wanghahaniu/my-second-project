@@ -3,19 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>黑天鹅识别与认知套利</title>
+  <meta name="description" content="黑天鹅识别分析系统与认知套利框架，面向战争、政治冲突、金融危机的叙事偏差识别。">
+  <title>黑天鹅识别分析系统与认知套利</title>
   <style>
     :root {
-      --bg: #f3efe5;
-      --bg-soft: #fbf8f1;
-      --panel: rgba(255, 252, 245, 0.88);
-      --ink: #1e1d1a;
-      --muted: #655f52;
-      --line: rgba(78, 66, 42, 0.16);
-      --accent: #a33f2f;
-      --accent-2: #204b57;
-      --shadow: 0 24px 60px rgba(58, 44, 24, 0.14);
-      --radius: 24px;
+      --bg: #efe6d3;
+      --bg-deep: #d7c4a4;
+      --paper: rgba(255, 250, 240, 0.88);
+      --paper-strong: rgba(255, 252, 247, 0.96);
+      --ink: #1d1a15;
+      --muted: #675d4e;
+      --line: rgba(58, 44, 24, 0.16);
+      --accent: #9f3f2f;
+      --accent-deep: #7b2c21;
+      --teal: #244f5a;
+      --gold: #b8892d;
+      --shadow: 0 22px 70px rgba(49, 34, 11, 0.18);
+      --radius: 26px;
+      --radius-sm: 18px;
+      --content: min(1160px, calc(100% - 28px));
     }
 
     * {
@@ -28,144 +34,371 @@
 
     body {
       margin: 0;
-      font-family: "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
       color: var(--ink);
-      background:
-        radial-gradient(circle at top left, rgba(163, 63, 47, 0.18), transparent 34%),
-        radial-gradient(circle at top right, rgba(32, 75, 87, 0.15), transparent 28%),
-        linear-gradient(180deg, #f8f3e8 0%, #f1ead9 100%);
+      font-family: "Georgia", "PingFang SC", "Microsoft YaHei", serif;
       line-height: 1.7;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(159, 63, 47, 0.15), transparent 28%),
+        radial-gradient(circle at 100% 0%, rgba(36, 79, 90, 0.18), transparent 26%),
+        linear-gradient(180deg, #f5ecda 0%, #e7d9bf 42%, #efe6d3 100%);
+      min-height: 100vh;
     }
 
-    .backdrop {
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .texture,
+    .texture::before {
       position: fixed;
       inset: 0;
       pointer-events: none;
-      background-image:
-        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-      background-size: 28px 28px;
-      mask-image: linear-gradient(180deg, black 0%, rgba(0, 0, 0, 0.18) 100%);
-    }
-
-    .page {
-      width: min(1120px, calc(100% - 32px));
-      margin: 0 auto;
-      padding: 48px 0 80px;
-    }
-
-    .hero {
-      padding: 40px;
-      border: 1px solid var(--line);
-      border-radius: calc(var(--radius) + 4px);
-      background:
-        linear-gradient(135deg, rgba(255, 248, 236, 0.94), rgba(255, 252, 247, 0.76)),
-        linear-gradient(180deg, rgba(163, 63, 47, 0.06), rgba(32, 75, 87, 0.05));
-      box-shadow: var(--shadow);
-      overflow: hidden;
-      position: relative;
-    }
-
-    .hero::after {
       content: "";
-      position: absolute;
-      width: 320px;
-      height: 320px;
-      right: -100px;
-      top: -120px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(163, 63, 47, 0.18), transparent 70%);
     }
 
-    .eyebrow {
-      display: inline-block;
-      margin-bottom: 16px;
-      padding: 6px 12px;
+    .texture {
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+      background-size: 30px 30px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.15));
+    }
+
+    .texture::before {
+      background:
+        radial-gradient(circle at center, rgba(255, 255, 255, 0.22), transparent 58%),
+        radial-gradient(circle at 50% 15%, rgba(184, 137, 45, 0.07), transparent 24%);
+    }
+
+    .topbar-wrap {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      padding-top: 14px;
+    }
+
+    .topbar {
+      width: var(--content);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 14px 18px;
+      border: 1px solid rgba(255, 249, 238, 0.38);
       border-radius: 999px;
-      background: rgba(32, 75, 87, 0.1);
-      color: var(--accent-2);
-      font-size: 13px;
+      background: rgba(23, 20, 16, 0.64);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 18px 40px rgba(28, 21, 10, 0.16);
+      color: #f8f1e6;
+    }
+
+    .brand {
+      min-width: 0;
+    }
+
+    .brand strong {
+      display: block;
+      font-size: 0.96rem;
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
 
-    h1, h2, h3 {
+    .brand span {
+      display: block;
+      color: rgba(248, 241, 230, 0.72);
+      font-size: 0.8rem;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .nav a,
+    .action-btn {
+      padding: 10px 14px;
+      border-radius: 999px;
+      color: #f8f1e6;
+      font-size: 0.92rem;
+      transition: transform 180ms ease, background 180ms ease, color 180ms ease;
+    }
+
+    .nav a:hover,
+    .action-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .action-btn {
+      border: 1px solid rgba(255, 248, 236, 0.14);
+      background: rgba(255, 255, 255, 0.06);
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .action-btn.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+      border-color: transparent;
+    }
+
+    .page {
+      width: var(--content);
+      margin: 0 auto;
+      padding: 24px 0 84px;
+      position: relative;
+    }
+
+    .report-hero {
+      position: relative;
+      overflow: hidden;
+      margin-top: 18px;
+      padding: 34px;
+      border: 1px solid rgba(107, 77, 31, 0.16);
+      border-radius: calc(var(--radius) + 6px);
+      background:
+        linear-gradient(140deg, rgba(255, 250, 241, 0.96), rgba(251, 243, 228, 0.78)),
+        radial-gradient(circle at top right, rgba(36, 79, 90, 0.14), transparent 34%);
+      box-shadow: var(--shadow);
+    }
+
+    .report-hero::before {
+      content: "";
+      position: absolute;
+      inset: 18px;
+      border: 1px solid rgba(184, 137, 45, 0.14);
+      border-radius: calc(var(--radius) - 4px);
+      pointer-events: none;
+    }
+
+    .report-cover {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .cover-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(36, 79, 90, 0.09);
+      color: var(--teal);
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .stamp {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    h1,
+    h2,
+    h3 {
       margin: 0;
-      line-height: 1.15;
+      line-height: 1.08;
       font-weight: 700;
     }
 
     h1 {
-      max-width: 800px;
-      font-size: clamp(2.4rem, 5vw, 4.8rem);
-      letter-spacing: -0.04em;
+      max-width: 740px;
+      font-size: clamp(2.8rem, 6vw, 5.4rem);
+      letter-spacing: -0.05em;
     }
 
-    .lead {
+    .subtitle {
+      margin-top: 18px;
       max-width: 760px;
-      margin-top: 20px;
-      font-size: 1.08rem;
       color: var(--muted);
+      font-size: 1.1rem;
     }
 
-    .hero-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
-      margin-top: 28px;
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 22px;
     }
 
-    .hero-card,
+    .hero-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--ink);
+      font-size: 0.95rem;
+      transition: transform 180ms ease, background 180ms ease;
+    }
+
+    .hero-link:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.94);
+    }
+
+    .hero-link.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+      border-color: transparent;
+      color: #fff7f0;
+    }
+
+    .cover-panel,
     .panel,
+    .signal-card,
     .score-card,
-    .path-card {
+    .path-card,
+    .sidebar-box {
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      background: var(--panel);
-      backdrop-filter: blur(10px);
+      background: var(--paper);
+      backdrop-filter: blur(12px);
       box-shadow: var(--shadow);
     }
 
-    .hero-card {
-      padding: 18px 20px;
+    .cover-panel {
+      padding: 22px;
+      display: grid;
+      align-content: space-between;
+      min-height: 100%;
+      background:
+        linear-gradient(180deg, rgba(38, 36, 31, 0.96), rgba(23, 22, 18, 0.9)),
+        linear-gradient(160deg, rgba(184, 137, 45, 0.12), transparent);
+      color: #f8f0e5;
     }
 
-    .hero-card strong {
+    .cover-panel small {
       display: block;
-      margin-bottom: 6px;
-      font-size: 0.92rem;
-      color: var(--accent);
+      color: rgba(248, 240, 229, 0.68);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.78rem;
+    }
+
+    .cover-panel strong {
+      display: block;
+      margin-top: 10px;
+      font-size: 1.55rem;
+      line-height: 1.2;
+      letter-spacing: -0.03em;
+    }
+
+    .cover-panel p {
+      margin: 16px 0 0;
+      color: rgba(248, 240, 229, 0.78);
+      font-size: 0.98rem;
+    }
+
+    .cover-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .mini-stat {
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 247, 236, 0.08);
+    }
+
+    .mini-stat span {
+      display: block;
+      color: rgba(248, 240, 229, 0.66);
+      font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
     }
 
+    .mini-stat strong {
+      margin-top: 8px;
+      font-size: 1.05rem;
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .panel,
+    .sidebar-box,
+    .signal-card,
+    .score-card,
+    .path-card {
+      padding: 24px;
+    }
+
+    .overview-card strong,
+    .score-card strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--accent);
+      font-size: 0.86rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
     .section {
       margin-top: 34px;
+      scroll-margin-top: 98px;
     }
 
     .section-head {
       display: flex;
       align-items: end;
       justify-content: space-between;
-      gap: 16px;
+      gap: 18px;
       margin-bottom: 18px;
     }
 
     .section-head p {
-      max-width: 640px;
+      max-width: 620px;
       margin: 0;
       color: var(--muted);
     }
 
-    .section-badge {
+    .section-kicker {
       color: var(--accent);
-      font-size: 0.82rem;
-      letter-spacing: 0.08em;
       text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.82rem;
+      margin-bottom: 6px;
     }
 
-    .panel {
-      padding: 26px;
+    h2 {
+      font-size: clamp(1.9rem, 4vw, 3rem);
+      letter-spacing: -0.04em;
+    }
+
+    h3 {
+      font-size: 1.2rem;
+      margin-bottom: 12px;
     }
 
     .grid-2 {
@@ -180,13 +413,8 @@
       gap: 20px;
     }
 
-    .panel h3 {
-      margin-bottom: 12px;
-      font-size: 1.2rem;
-    }
-
-    ol,
-    ul {
+    ul,
+    ol {
       margin: 0;
       padding-left: 20px;
     }
@@ -203,7 +431,7 @@
     .step {
       padding: 18px 18px 18px 20px;
       border-left: 4px solid var(--accent);
-      border-radius: 18px;
+      border-radius: var(--radius-sm);
       background: rgba(255, 255, 255, 0.44);
     }
 
@@ -215,157 +443,327 @@
 
     .quote {
       margin: 0;
-      padding: 24px;
+      padding: 30px;
       border-radius: var(--radius);
-      background: linear-gradient(135deg, rgba(32, 75, 87, 0.92), rgba(24, 52, 61, 0.92));
+      background:
+        linear-gradient(135deg, rgba(36, 79, 90, 0.96), rgba(27, 57, 66, 0.94)),
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 36%);
       color: #f7f3eb;
       box-shadow: var(--shadow);
     }
 
     .quote p {
       margin: 0;
-      font-size: clamp(1.25rem, 2.2vw, 1.9rem);
-      line-height: 1.35;
-      letter-spacing: -0.02em;
+      font-size: clamp(1.35rem, 2.6vw, 2.2rem);
+      line-height: 1.28;
+      letter-spacing: -0.03em;
     }
 
     .quote small {
       display: block;
       margin-top: 14px;
       color: rgba(247, 243, 235, 0.78);
-      font-size: 0.92rem;
+      font-size: 0.95rem;
     }
 
-    .score-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 16px;
-      margin-top: 18px;
-    }
-
-    .score-card {
-      padding: 18px;
-    }
-
-    .score-card strong {
-      display: block;
-      color: var(--muted);
-      font-size: 0.86rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-
-    .score-card span {
-      display: block;
-      margin-top: 8px;
-      color: var(--accent);
-      font-size: 1.4rem;
-      font-weight: 700;
-    }
-
+    .signal-grid,
+    .score-grid,
     .path-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
+      gap: 18px;
+      margin-top: 18px;
     }
 
-    .path-card {
-      padding: 18px;
+    .signal-card {
+      position: relative;
+      overflow: hidden;
     }
 
-    .path-card h3 {
-      font-size: 1.02rem;
-      margin-bottom: 8px;
+    .signal-card::after {
+      content: "";
+      position: absolute;
+      inset: auto -20px -40px auto;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(159, 63, 47, 0.08), transparent 68%);
+    }
+
+    .signal-index {
+      display: inline-flex;
+      width: 34px;
+      height: 34px;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+      border-radius: 50%;
+      background: rgba(159, 63, 47, 0.1);
+      color: var(--accent);
+      font-weight: 700;
     }
 
     .formula {
       margin-top: 18px;
       padding: 16px 18px;
-      border-radius: 18px;
-      background: rgba(163, 63, 47, 0.08);
-      border: 1px solid rgba(163, 63, 47, 0.12);
+      border: 1px solid rgba(159, 63, 47, 0.14);
+      border-radius: var(--radius-sm);
+      background: rgba(159, 63, 47, 0.08);
       font-weight: 600;
+    }
+
+    .analysis-board {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 20px;
+      margin-top: 18px;
     }
 
     .template {
       margin-top: 18px;
-      padding: 20px;
-      border-radius: 18px;
-      background: #181713;
+      padding: 22px;
+      border-radius: var(--radius-sm);
+      background: #181610;
       color: #f7f3eb;
       overflow-x: auto;
       font-family: Consolas, "SFMono-Regular", Menlo, monospace;
       font-size: 0.95rem;
       white-space: pre-wrap;
+      box-shadow: inset 0 0 0 1px rgba(255, 247, 236, 0.07);
+    }
+
+    .score-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .score-card span {
+      display: block;
+      color: var(--teal);
+      font-size: 1.38rem;
+      font-weight: 700;
+    }
+
+    .sidebar-box + .sidebar-box {
+      margin-top: 18px;
+    }
+
+    .checklist li {
+      margin-bottom: 10px;
+    }
+
+    .back-to-top {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 25;
+      width: 54px;
+      height: 54px;
+      border: 0;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+      color: #fff8f0;
+      box-shadow: 0 18px 40px rgba(80, 29, 19, 0.26);
+      cursor: pointer;
+      opacity: 0;
+      transform: translateY(14px);
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+      font-size: 1.2rem;
+    }
+
+    .back-to-top.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .copy-tip {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(16px);
+      z-index: 26;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(23, 20, 16, 0.9);
+      color: #fbf2e8;
+      font-size: 0.92rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .copy-tip.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
 
     .footer {
-      margin-top: 32px;
-      text-align: center;
+      margin-top: 34px;
+      padding: 22px 20px;
+      border-top: 1px solid rgba(58, 44, 24, 0.12);
       color: var(--muted);
-      font-size: 0.92rem;
+      text-align: center;
+      font-size: 0.94rem;
     }
 
-    @media (max-width: 900px) {
-      .hero-grid,
+    @media (max-width: 980px) {
+      .topbar {
+        border-radius: 28px;
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .report-cover,
       .grid-2,
       .grid-3,
+      .analysis-board,
+      .signal-grid,
       .score-grid,
-      .path-grid {
+      .path-grid,
+      .overview-grid {
         grid-template-columns: 1fr;
       }
 
       .page {
-        width: min(100% - 20px, 1120px);
-        padding-top: 20px;
+        width: min(100% - 18px, 1160px);
+      }
+    }
+
+    @media (max-width: 720px) {
+      .topbar-wrap {
+        padding-top: 10px;
       }
 
-      .hero {
-        padding: 26px 20px;
+      .topbar,
+      .report-hero,
+      .panel,
+      .sidebar-box,
+      .signal-card,
+      .score-card,
+      .path-card {
+        padding-left: 18px;
+        padding-right: 18px;
       }
 
-      .section-head {
-        display: block;
+      .report-hero {
+        padding-top: 24px;
+        padding-bottom: 24px;
       }
 
-      .section-head p {
-        margin-top: 10px;
+      .nav {
+        justify-content: flex-start;
+      }
+
+      .actions {
+        width: 100%;
+      }
+
+      .action-btn {
+        flex: 1;
+        text-align: center;
       }
     }
   </style>
 </head>
 <body>
-  <div class="backdrop"></div>
+  <div class="texture"></div>
+
+  <div class="topbar-wrap">
+    <div class="topbar">
+      <div class="brand">
+        <strong>Black Swan Research</strong>
+        <span>黑天鹅识别分析系统与认知套利</span>
+      </div>
+
+      <nav class="nav" aria-label="页面导航">
+        <a href="#cover">封面</a>
+        <a href="#black-swan">黑天鹅识别</a>
+        <a href="#signals">套利信号</a>
+        <a href="#card">分析卡片</a>
+      </nav>
+
+      <div class="actions">
+        <button class="action-btn" type="button" id="copy-link-btn">复制链接</button>
+        <a class="action-btn primary" href="#card">快速套用</a>
+      </div>
+    </div>
+  </div>
+
   <main class="page">
-    <section class="hero">
-      <span class="eyebrow">Black Swan Detection</span>
-      <h1>黑天鹅识别分析系统与认知套利框架</h1>
-      <p class="lead">
-        这是一套把“重大事件分析”与“叙事错位识别”合并起来的工作框架。第一部分用于判断战争、政治冲突、金融危机中是否存在集体误判，第二部分用于识别市场叙事与真实世界之间的套利空间。
-      </p>
-      <div class="hero-grid">
-        <article class="hero-card">
-          <strong>核心问题</strong>
-          <div>当前主流叙事是否因为历史惯性而误判真实风险？</div>
-        </article>
-        <article class="hero-card">
-          <strong>分析对象</strong>
-          <div>战争、地缘政治冲突、能源危机、信用危机、政策级冲击。</div>
-        </article>
-        <article class="hero-card">
-          <strong>判断重点</strong>
-          <div>当旧叙事给新结构定价时，黑天鹅与认知套利同时出现。</div>
-        </article>
+    <section class="report-hero section" id="cover">
+      <div class="report-cover">
+        <div>
+          <div class="cover-meta">
+            <span class="tag">Research Note</span>
+            <span class="tag">Narrative vs Reality</span>
+            <span class="stamp">适用于战争、政治冲突、金融危机</span>
+          </div>
+          <h1>黑天鹅识别分析系统 与 认知套利框架</h1>
+          <p class="subtitle">
+            这是一套把重大事件分析与叙事错位识别合并起来的研究页面。第一部分判断是否存在因认知惯性导致的集体误判，第二部分追踪市场叙事和真实世界之间的偏差，并把它转化为可复用的认知套利模板。
+          </p>
+
+          <div class="hero-actions">
+            <a class="hero-link primary" href="#black-swan">进入分析系统</a>
+            <a class="hero-link" href="#signals">查看 5 个信号</a>
+            <a class="hero-link" href="#card">打开分析卡片</a>
+          </div>
+
+          <div class="overview-grid">
+            <article class="panel overview-card">
+              <strong>核心问题</strong>
+              <div>当前主流叙事是否因为历史惯性而误判真实风险。</div>
+            </article>
+            <article class="panel overview-card">
+              <strong>研究对象</strong>
+              <div>战争、政治冲突、能源危机、信用危机、政策级冲击。</div>
+            </article>
+            <article class="panel overview-card">
+              <strong>判断重点</strong>
+              <div>当旧叙事给新结构定价时，黑天鹅与认知套利会一起出现。</div>
+            </article>
+          </div>
+        </div>
+
+        <aside class="cover-panel">
+          <div>
+            <small>Executive View</small>
+            <strong>认知套利的本质是 市场叙事 VS 真实世界</strong>
+            <p>
+              市场交易的往往不是事实本身，而是大家以为事实意味着什么。只要“被广泛相信的解释框架”和“真正驱动结果的底层变量”之间出现偏差，套利空间就会出现。
+            </p>
+          </div>
+
+          <div class="cover-grid">
+            <div class="mini-stat">
+              <span>黑天鹅判据</span>
+              <strong>类比强 + 差异大</strong>
+            </div>
+            <div class="mini-stat">
+              <span>套利公式</span>
+              <strong>叙事定价 - 现实演化</strong>
+            </div>
+            <div class="mini-stat">
+              <span>关键盲点</span>
+              <strong>隐变量被忽视</strong>
+            </div>
+            <div class="mini-stat">
+              <span>实战目标</span>
+              <strong>找错位 而非找新闻</strong>
+            </div>
+          </div>
+        </aside>
       </div>
     </section>
 
-    <section class="section">
+    <section class="section" id="black-swan">
       <div class="section-head">
         <div>
-          <div class="section-badge">Part 1</div>
+          <div class="section-kicker">Part 1</div>
           <h2>黑天鹅识别分析系统</h2>
         </div>
-        <p>围绕“当前叙事、认知偏差、变量差异、黑天鹅路径、概率评估”五个层次进行拆解。</p>
+        <p>围绕“当前叙事、认知偏差、关键变量差异、黑天鹅路径、概率评估”五个层次展开，专门用于发现集体误判。</p>
       </div>
 
       <div class="grid-2">
@@ -374,23 +772,23 @@
           <div class="steps">
             <div class="step">
               <strong>第一步：识别当前主流叙事</strong>
-              总结媒体、市场和专家对事件的主流观点，提炼“现在大家最相信的故事”。
+              总结媒体、市场和专家对事件的主流观点，提炼“现在大家最相信的故事是什么”。
             </div>
             <div class="step">
               <strong>第二步：检测历史类比</strong>
-              判断叙事是否过度引用历史案例，是否用旧地图线性推演新结构。
+              判断叙事是否过度引用历史案例，是否正在用旧地图线性推演新结构。
             </div>
             <div class="step">
               <strong>第三步：识别认知偏差</strong>
-              重点扫描锚定效应、线性思维、可得性偏差、群体叙事。
+              扫描锚定效应、线性思维、可得性偏差、群体叙事四类常见误差。
             </div>
             <div class="step">
               <strong>第四步：分析关键变量差异</strong>
-              从政权结构、军事体系、地理条件、社会动员、外部联盟、能源影响、全球市场影响七个维度比较“这次”和“上次”。
+              从政权结构、军事体系、地理条件、社会动员、外部联盟、能源影响、全球市场影响七个维度，比较“这次”和“上次”的不同。
             </div>
             <div class="step">
-              <strong>第五步：黑天鹅概率评估</strong>
-              如果历史类比很强，而关键变量差异显著，则集体误判概率上升。
+              <strong>第五步：评估黑天鹅概率</strong>
+              如果历史类比强，而关键变量差异显著，则集体误判概率上升。
             </div>
           </div>
         </article>
@@ -409,15 +807,13 @@
           <ul>
             <li>锚定效应：是否锚定在旧危机模板、旧价格区间、旧结论上。</li>
             <li>线性思维：是否默认事件会按固定次序平滑演进。</li>
-            <li>可得性偏差：是否因为过去几次没失控，就默认这次也不会。</li>
+            <li>可得性偏差：是否因为过去几次没失控，就默认这次也一样。</li>
             <li>群体叙事：是否多方主体都在复述同一套共识逻辑。</li>
           </ul>
         </article>
       </div>
-    </section>
 
-    <section class="section">
-      <div class="grid-3">
+      <div class="grid-3" style="margin-top: 20px;">
         <article class="panel">
           <h3>关键变量差异</h3>
           <ul>
@@ -441,17 +837,15 @@
         </article>
         <article class="panel">
           <h3>一句话判别</h3>
-          <p>
-            如果主流分析还在用旧叙事解释新结构，而关键约束已经变化，那么市场对风险的定价很可能偏低，黑天鹅路径就值得重点跟踪。
-          </p>
+          <p>如果主流分析还在用旧叙事解释新结构，而关键约束已经变化，那么市场对风险的定价很可能偏低，黑天鹅路径就值得重点跟踪。</p>
         </article>
       </div>
     </section>
 
-    <section class="section">
+    <section class="section" id="cognitive-arbitrage">
       <div class="section-head">
         <div>
-          <div class="section-badge">Part 2</div>
+          <div class="section-kicker">Part 2</div>
           <h2>认知套利</h2>
         </div>
         <p>认知套利不是“别人不知道”，而是“别人知道，但理解错了”。</p>
@@ -462,11 +856,12 @@
         <small>认知套利的核心，是被广泛相信的解释框架与真正驱动结果的底层变量之间的偏差。</small>
       </blockquote>
 
-      <div class="grid-2" style="margin-top: 20px;">
+      <div class="analysis-board">
         <article class="panel">
           <h3>本质定义</h3>
           <p>市场交易的往往不是事实本身，而是“大家以为事实意味着什么”。只要叙事和现实演化之间存在偏差，就会出现认知套利。</p>
           <div class="formula">认知套利 = 叙事定价 - 现实演化</div>
+
           <h3 style="margin-top: 22px;">三种典型形态</h3>
           <ul>
             <li>叙事过度简化现实。</li>
@@ -475,64 +870,74 @@
           </ul>
         </article>
 
-        <article class="panel">
-          <h3>与其他套利的区别</h3>
-          <ul>
-            <li><strong>信息套利：</strong>别人不知道。</li>
-            <li><strong>认知套利：</strong>别人知道，但解释错。</li>
-            <li><strong>结构套利：</strong>别人解释对了，但仓位和制度反应跟不上。</li>
-          </ul>
-          <p style="margin-top: 16px;">
-            放到黑天鹅框架里，可以压缩成一句话：当主流叙事仍在旧世界，而真实世界已经切入新逻辑时，认知套利就出现了。
-          </p>
-        </article>
+        <aside>
+          <article class="sidebar-box">
+            <h3>与其他套利的区别</h3>
+            <ul>
+              <li><strong>信息套利：</strong>别人不知道。</li>
+              <li><strong>认知套利：</strong>别人知道，但解释错。</li>
+              <li><strong>结构套利：</strong>别人解释对了，但仓位和制度反应跟不上。</li>
+            </ul>
+          </article>
+
+          <article class="sidebar-box">
+            <h3>一句话压缩</h3>
+            <p>当主流叙事仍在旧世界，而真实世界已经切入新逻辑时，认知套利就出现了。</p>
+          </article>
+        </aside>
       </div>
     </section>
 
-    <section class="section">
+    <section class="section" id="signals">
       <div class="section-head">
         <div>
-          <div class="section-badge">Signals</div>
+          <div class="section-kicker">Signals</div>
           <h2>识别认知套利的 5 个信号</h2>
         </div>
-        <p>共识越强、类比越旧、隐变量越被忽略，认知套利越值得关注。</p>
+        <p>共识越强、类比越旧、隐变量越被忽略，认知套利越值得重点关注。</p>
       </div>
 
-      <div class="grid-3">
-        <article class="panel">
-          <h3>1. 叙事高度统一</h3>
+      <div class="signal-grid">
+        <article class="signal-card">
+          <div class="signal-index">1</div>
+          <h3>叙事高度统一</h3>
           <p>媒体、专家、交易员开始反复使用同一套话术，比如“可控”“短期”“不会外溢”，说明共识模板已经形成。</p>
         </article>
-        <article class="panel">
-          <h3>2. 历史类比被过度使用</h3>
+        <article class="signal-card">
+          <div class="signal-index">2</div>
+          <h3>历史类比被过度使用</h3>
           <p>当分析大量借用 1973、1990、2008、2022 这类旧案例时，往往意味着大家在用旧地图走新地形。</p>
         </article>
-        <article class="panel">
-          <h3>3. 显性变量压过隐性变量</h3>
+        <article class="signal-card">
+          <div class="signal-index">3</div>
+          <h3>显性变量压过隐性变量</h3>
           <p>市场只盯油价、利率、指数，但真正改变结果的可能是保险、港口、联盟裂缝、社会动员和信用收缩。</p>
         </article>
-        <article class="panel">
-          <h3>4. 讲故事的人多，接近现场的人少</h3>
-          <p>评论越来越流畅，一线信号却越来越稀薄，说明市场正在交易解释，而不是交易真实约束。</p>
+        <article class="signal-card">
+          <div class="signal-index">4</div>
+          <h3>讲故事的人多，接近现场的人少</h3>
+          <p>评论越来越流畅，一线信号却越来越稀薄，说明市场在交易解释，而不是交易真实约束。</p>
         </article>
-        <article class="panel">
-          <h3>5. 共识前提没有被说清</h3>
+        <article class="signal-card">
+          <div class="signal-index">5</div>
+          <h3>共识前提没有被说清</h3>
           <p>很多坚定结论都依赖脆弱前提，比如“不会升级”“央行仍能托底”“联盟不会裂开”。这些前提一旦失效，重定价会很快。</p>
         </article>
-        <article class="panel">
+        <article class="signal-card">
+          <div class="signal-index">∑</div>
           <h3>实战公式</h3>
           <p>认知套利概率 = 共识强度 × 历史类比强度 × 隐变量被忽视程度。</p>
         </article>
       </div>
     </section>
 
-    <section class="section">
+    <section class="section" id="card">
       <div class="section-head">
         <div>
-          <div class="section-badge">Template</div>
+          <div class="section-kicker">Template</div>
           <h2>认知套利分析卡片</h2>
         </div>
-        <p>用于对任何战争、政治冲突、金融危机做快速半结构化判断。</p>
+        <p>用于对任何战争、政治冲突、金融危机做快速半结构化判断，并把结论落到可执行的错位定位上。</p>
       </div>
 
       <div class="score-grid">
@@ -554,7 +959,7 @@
         </article>
       </div>
 
-      <div class="path-grid" style="margin-top: 20px;">
+      <div class="path-grid">
         <article class="path-card">
           <h3>错位点定位</h3>
           <p>市场在交易什么？真实世界在发生什么？两者的偏差究竟落在价格、机制还是行为上？</p>
@@ -569,7 +974,10 @@
         </article>
       </div>
 
-      <div class="template">事件：
+      <div class="analysis-board">
+        <article class="panel">
+          <h3>极简填空版</h3>
+          <div class="template">事件：
 主流叙事：
 历史类比：
 锚定效应：
@@ -592,9 +1000,77 @@
 黑天鹅路径 3：
 认知套利概率：
 一句话结论：</div>
+        </article>
+
+        <aside>
+          <article class="sidebar-box">
+            <h3>快速检查清单</h3>
+            <ul class="checklist">
+              <li>大家是不是在讲同一个故事？</li>
+              <li>这个故事是不是过度依赖历史类比？</li>
+              <li>市场是不是只盯着几个显性价格？</li>
+              <li>一线行为有没有和主流叙事脱节？</li>
+              <li>这个共识成立，偷偷依赖了哪些前提？</li>
+            </ul>
+          </article>
+
+          <article class="sidebar-box">
+            <h3>结论规则</h3>
+            <p>如果“共识强 + 类比强 + 差异大 + 隐变量被忽视”，则认知套利显著。如果只有共识强但差异不大，那更像拥挤交易，而不一定是错判。</p>
+          </article>
+        </aside>
+      </div>
     </section>
 
-    <p class="footer">页面内容基于本次聊天整理，适合作为单页阅读稿、分析底稿或后续扩展为完整研究框架。</p>
+    <footer class="footer">
+      页面内容整理自本次聊天记录，现已升级为公开单页研究稿，适合作为阅读页、分享页和后续研究底稿。
+    </footer>
   </main>
+
+  <button class="back-to-top" type="button" id="back-to-top" aria-label="返回顶部">↑</button>
+  <div class="copy-tip" id="copy-tip">链接已复制</div>
+
+  <script>
+    const backToTopButton = document.getElementById("back-to-top");
+    const copyButton = document.getElementById("copy-link-btn");
+    const copyTip = document.getElementById("copy-tip");
+
+    function updateBackToTop() {
+      if (window.scrollY > 480) {
+        backToTopButton.classList.add("visible");
+      } else {
+        backToTopButton.classList.remove("visible");
+      }
+    }
+
+    window.addEventListener("scroll", updateBackToTop, { passive: true });
+    updateBackToTop();
+
+    backToTopButton.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    copyButton.addEventListener("click", async () => {
+      const text = window.location.href;
+
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          const tempInput = document.createElement("input");
+          tempInput.value = text;
+          document.body.appendChild(tempInput);
+          tempInput.select();
+          document.execCommand("copy");
+          tempInput.remove();
+        }
+
+        copyTip.classList.add("show");
+        window.setTimeout(() => copyTip.classList.remove("show"), 1800);
+      } catch (error) {
+        window.alert("复制失败，请手动复制当前地址。");
+      }
+    });
+  </script>
 </body>
 </html>
